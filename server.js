@@ -7,7 +7,7 @@ var http = require('http').Server(app);
 //sqlite3
 var sqlite3 = require('sqlite3').verbose();
 var hostdb = process.env.OPENSHIFT_DATA_DIR + 'database.db'
-var dbpath = hostdb || './data/database.db'; // || hostdb
+var dbpath = './data/database.db'; // || hostdb
 var db = new sqlite3.Database(dbpath);
 var dbsetup = require("./dbsetup.js");
 //creates database
