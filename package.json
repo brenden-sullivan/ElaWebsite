@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "description": "8th Grade English Website",
   "scripts": {
-	"start": "node server.js"
+	"start": "supervisor server.js"
   },
   "main": "server.js",
   "dependencies": {
