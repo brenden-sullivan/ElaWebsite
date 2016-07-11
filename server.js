@@ -677,6 +677,11 @@ function checkAddLinkForm(data) {
 		status['modified'] = true;
 	}
 	
+	else if(!validator.isURL(link)) {
+		status['addLinkStatus'] = "Make sure the link provided is a URL (includes the 'http://' part)";
+		status['modified'] = true;
+	}
+	
 	return status;
 }
 
