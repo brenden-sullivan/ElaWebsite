@@ -1,0 +1,36 @@
+extends template.jade
+
+block page-content
+	h1 Home
+	a(id="courselinks-link" href="/CourseLinks") Links
+				
+block scripts				
+	script.
+		/*
+		$(document).ready(function() {
+			$("#courselinks-link").click(function(e) {
+				console.log("Clicked courselinks");
+			
+				e.preventDefault();
+				
+				$.ajax({
+					url: "/CourseLinks",
+					type: "GET",
+					dataType: "html",
+					
+					success: function(data) {
+						console.log("Success");
+						$("#main-content").html(data);
+					},
+					
+					error: function(data) {
+						console.log(data);
+					}
+				
+				}); 
+			
+			}); 
+			
+			
+		}); //end document.ready
+		*/

@@ -1,0 +1,249 @@
+mixin courseLinkBlock(data)
+	div(class="course-link")
+		h1(class="course-link-name")
+			a(href=data.link class="course-link-name-link")=data.name
+		a(href=data.link class="course-link-url")=data.link
+		p(class="course-link-description")=data.description
+
+mixin adminCourseLinkBlock(data)
+	//- ex. 1-div
+	-var divId = data.id + "-div"
+	div(id=divId class="course-link")
+		h1(class="course-link-name")
+			a(href=data.link class="course-link-name-link")=data.name
+		a(href=data.link class="course-link-url")=data.link
+		p(class="course-link-description")=data.description
+		
+		//- ex. 1-div-modify-buttons
+		-var buttonDivId = divId + "-modify-buttons"
+		div(id=buttonDivId class="course-link-modify-buttons")
+			//- ex. 1-update-button
+			-var updateButtonId = data.id + "-update-button"
+			button(id=updateButtonId class="update-link-button" onclick="updateClicked(this)") Update
+			-var deleteButtonId = data.id + "-delete-button"
+			button(id=deleteButtonId class="delete-link-button" onclick="deleteClicked(this)") Delete
+		
+		
+
+if(view == 'guest' || view == 'student')
+	div(id="course-links-div")
+		each val in links
+			+courseLinkBlock(val)
+	
+else if(view == 'admin')
+
+	div(id="course-links-div")
+		p(id="add-link-status")=addLinkStatus
+		
+		button(id="show-add-form-button") Add Link
+		
+		div(id="course-links-add-form")
+			form(id="add-course-link-form" action="addlink-form" method="POST")
+				h1 Add a link
+				p Please fill out all fields
+				
+				label(id="add-link-name-label" class="add-link-label") 
+					strong Link Name
+					
+				input(id="add-link-name" type="text" name="link-name" size="30" placeholder="Name" value=linkNameValue required)
+				
+				label(id="add-link-url-label" class="add-link-label")
+					strong Link
+					
+				input(id="add-link-url" type="text" name="link-url" size="30" placeholder="URL" value=linkURLValue required)
+				
+				label(id="add-link-description-label" class="add-link-label")
+					strong Description
+					
+				textarea(id="add-link-desc" name="link-desc" cols="100" rows="10" placeholder="Description" value=linkDescValue)
+				
+				input(id="add-link-submit" class="input-button" type="submit" value="Submit")
+				
+				button(id="hide-add-form-button") Cancel
+		
+		each val, index in links
+			+adminCourseLinkBlock(val)
+	
+	script.
+		$(document).ready(function() {
+			//-form hidden by default
+			$("#course-links-add-form").toggle();
+			
+			//-add form submit as ajax call
+			$("#add-course-link-form").submit(function(e) {
+				e.preventDefault();
+			
+				var inputs = $("#add-course-link-form :input");
+				
+				$.ajax({
+					url: "/addlink-form",
+					type: "POST",
+					dataType: "html",
+					
+					data: inputs,
+					
+					success: function(data) {
+						$("#course-links-content").html(data);
+					}
+				
+				});
+			});
+			
+			//-these two are to show and hide the add form
+			$("#show-add-form-button").click(function() {
+				$("#course-links-add-form").toggle();
+				
+				$("#show-add-form-button").toggle();
+			
+				return false;
+			});
+			
+			$("#hide-add-form-button").click(function() {
+				$("#course-links-add-form").toggle();
+				
+				$("#show-add-form-button").toggle();
+				
+				return false;
+			});
+			
+			return false;
+		}); //end document.ready
+		
+		//called when a delete button is clicked
+		function deleteClicked(button) {
+			var splitString = button.id.split("-");
+			var clickedId = splitString[0];
+			
+			var confirm = window.confirm("Are you sure you want to delete this link?");
+			
+			if(confirm == true) {
+				$.ajax({
+					url: "/CourseLinks/" + clickedId,
+					type: "DELETE",
+					dataType: "html",
+					
+					success: function(data) {
+						$("#course-links-content").html(data);
+					}
+				
+				});
+			}
+				
+			return false;
+		}
+		
+		
+		//called to make update form appear
+		function updateClicked(button){
+		
+			//get id of the link we want to update
+			var splitString = button.id.split("-");
+			var clickedId = splitString[0];
+			
+			//grab the div with that id
+			var divId = "#" + clickedId + "-div";
+			var updateDiv = $(divId);
+			
+			//get the values for all the fields we need
+			var name = updateDiv.find("h1").find("a").html();
+			var url = updateDiv.find("a").attr("href");
+			var desc = updateDiv.find("p").html();
+			
+			//hide update and delete buttons
+			$(divId + "-modify-buttons").toggle();
+			//$(divId + "-modify-buttons").remove();
+			
+			//display data as form
+			var formHtml = ' \
+				<input type="text" name="update-link-name" size="30" value="' + name + '"> \
+				<br/> \
+				<input type="text" name="update-link-url" size="30" value="' + url + '"> \
+				<textarea name="update-link-desc" cols="100" rows="10">' + desc + '</textarea> \
+				<button id="' + clickedId + '-submit-link-update" class="input-button submit-update-button" onclick="submitUpdate(this)">Submit</button> \
+				<button id="' + clickedId + '-hide-link-update-button" class="cancel-update-button input-button" onclick="cancelUpdate(this)">Cancel</button> \
+				';
+				
+			updateDiv.html(formHtml);
+			
+			return false;
+		}
+		
+		
+		
+		//called to submit an update form
+		function submitUpdate(button) {
+			//get id of the link we want to update
+			var splitString = button.id.split("-");
+			var clickedId = splitString[0];
+			
+			//get form values
+			var name = $("input[name*='update-link-name']").val();
+			var url = $("input[name*='update-link-url']").val();
+			var desc = $("textarea[name*='update-link-desc']").val();
+			
+			$.ajax({
+				url: "/UpdateLink/" + clickedId,
+				type: "POST",
+				dataType: "html",
+				
+				data: {
+					name: name,
+					url: url,
+					desc:desc
+				},
+				
+				success: function(data) {
+					$("#course-links-content").html(data);
+				}
+			
+			});
+			
+			return false;
+		}
+		
+		//called on clicking of a cancel button
+		function cancelUpdate(button) {
+			//get id of the link we want to update
+			var splitString = button.id.split("-");
+			var clickedId = splitString[0];
+			
+			//grab the div with that id
+			var divId = "#" + clickedId + "-div";
+			var updateDiv = $(divId);
+			
+			//get form values
+			var name = $("input[name*='update-link-name']").val();
+			var url = $("input[name*='update-link-url']").val();
+			var desc = $("textarea[name*='update-link-desc']").val();
+			
+			var linkHtml = ' \
+				<h1 class="course-link-name"> \
+					<a href="' + url + '" class="course-link-name-link">' + name + '</a> \
+				</h1> \
+				<a href="' + url + '" class="course-link-url">' + url + '</a> \
+				<p class="course-link-description">' + desc + '</p> \
+				<div id="' + clickedId + '-div-modify-buttons" class="course-link-modify-buttons"> \
+					<button id="' + clickedId + '-update-button" class="update-link-button" onclick="updateClicked(this)">Update</button> \
+					<button id="' + clickedId + '-delete-button" class="delete-link-button" onclick="deleteClicked(this)">Delete</button> \
+				</div> \
+			';
+			
+			divId = "#" + clickedId + "-div";
+			
+			$(divId).html(linkHtml);
+			
+			//$(divId + "-modify-buttons").toggle();
+			
+			return false;
+		}
+		
+	
+else
+	p Unable to access this site - try loggin on as guest from 
+		a(href='/') here
+
+	
+	
+	
+	
+	

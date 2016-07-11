@@ -1,0 +1,14 @@
+body {
+	font-family: Arial;
+	width: 940px;
+	margin: 20px auto 20px auto;
+}
+
+textarea {
+	resize: none;
+	display: block;
+}
+
+label {
+	display: block;
+}
