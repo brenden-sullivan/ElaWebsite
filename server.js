@@ -40,7 +40,7 @@ app.get('/', function(req, res, next) {
 				statusString: ''
 			};
 			
-			var html = template.renderFile(__dirname + '/static/LoginPage.jade', data);
+			var html = template.renderFile(__dirname + '/static/loginpage.jade', data);
 				
 			res.send(html);
 		} catch (e) {
