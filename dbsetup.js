@@ -79,12 +79,11 @@ module.exports = {
 		db.run("insert into CourseLinks values(null, 'x', 'y', 'z');", [], function(err) {
 			//console.log(err);
 		});
-		*/
 		
 		db.run("insert into AdminConfig(student_key, admin_key) values('student', 'admin');", [], function(err) {
 			//console.log(err);
 		});
-		/*
+		
 		db.run("insert into CourseLinks(name, link, description) " +
 			"values('Citation', 'http://www.citationmachine.net/', 'Generate citations.');", 
 			[], function(err) {
