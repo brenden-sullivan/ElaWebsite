@@ -2,12 +2,14 @@ var express = require('express');
 var app = express();
 var template = require('jade');
 var http = require('http').Server(app);
-//template.compileFile(__dirname + '/static/index.pug');
+var fs = require('fs');
 
 //sqlite3
 var sqlite3 = require('sqlite3').verbose();
-var hostdb = process.env.OPENSHIFT_DATA_DIR + 'database.db'
-var dbpath = hostdb; //'./data/database.db'; // || hostdb
+var dataPath = process.env.OPENSHIFT_DATA_DIR || './data/'; //also used for files
+//var hostdb = dataPath + 'database.db';
+//var dbpath = './data/database.db'; // || hostdb
+var dbpath = dataPath + 'database.db';
 var db = new sqlite3.Database(dbpath);
 var dbsetup = require("./dbsetup.js");
 //creates database
@@ -49,22 +51,35 @@ app.get('/', function(req, res, next) {
 	}
 	
 	else {
-		try {
-			var data = {
-				titleString: 'Home', 
-				view: cookies.view
-			};
+		db.all("select * from Announcements order by date desc limit 10", function(err, rows) {
+			if(err) {
+				console.log(err);
+			}
 			
-			var html = template.renderFile(__dirname + '/static/index.jade', data);
+			try {
+				var data = {
+					titleString: 'Home',
+					
+					view: cookies.view,
+					greetingName: cookies.name,
+					
+					announcements: rows
+				}
 				
-			res.send(html);
-			
-		} catch (e) {
-			next(e);
-		}
+				var html = template.renderFile(__dirname + "/static/index.jade", data);
+				
+				res.send(html);
+		
+			} catch(e) {
+				next(e);
+			}
+		});
 	}
 });
 
+/*********************************************************************
+Log in, log out, and signup functions
+**********************************************************************/
 //login
 app.post('/login', function(req, res, next) {
 
@@ -143,10 +158,12 @@ app.post('/login', function(req, res, next) {
 				var html = template.renderFile(__dirname + '/static/redirect.jade', data);
 				
 				
-				
 				res.setHeader('Set-Cookie', 
 					[
-					cookie.serialize('name', rows[0].first_name + " " + rows[0].last_name, {
+					cookie.serialize('id', rows[0].id, {
+						maxAge: 60 * 60 * 24 * 7 //a week
+					}), 
+					cookie.serialize('name', rows[0].first_name, {
 						maxAge: 60 * 60 * 24 * 7 //a week
 					}), 
 					cookie.serialize('permission', rows[0].permission, {
@@ -306,7 +323,10 @@ app.post('/signup', function(req, res, next) {
 						
 					res.setHeader('Set-Cookie', 
 						[
-						cookie.serialize('name' , first + ' ' + last, {
+						cookie.serialize('id' , rows[0].id, {
+							maxAge: 60 * 60 * 24 * 7 //a week
+						}),
+						cookie.serialize('name' , first, {
 							maxAge: 60 * 60 * 24 * 7 //a week
 						}), 
 						cookie.serialize('permission', permission, {
@@ -339,6 +359,9 @@ app.get('/guest', function(req, res, next) {
 			
 		res.setHeader('Set-Cookie', 
 			[
+			cookie.serialize('id', -1, {
+				maxAge: 60 * 60 * 24 * 7 //a week
+			}), 
 			cookie.serialize('name', 'Guest', {
 				maxAge: 60 * 60 * 24 * 7 //a week
 			}), 
@@ -358,6 +381,196 @@ app.get('/guest', function(req, res, next) {
 	}
 });
 
+
+//handle log out (basically just remmoves all the cookies
+app.get('/logout', function(req, res, next) {
+	var cookies = cookie.parse(req.headers.cookie || '');
+
+	try {
+		var data = {
+			titleString: 'Re-direct'
+		};
+	
+		var html = template.renderFile(__dirname + '/static/redirect.jade', data);
+			
+		//set all cookiesto expire
+		res.setHeader('Set-Cookie', 
+			[
+			cookie.serialize('id', 'Guest', {
+				maxAge: -1000
+			}), 
+			cookie.serialize('name', 'Guest', {
+				maxAge: -1000
+			}), 
+			cookie.serialize('permission', 'guest', {
+				maxAge: -1000
+			}),
+			cookie.serialize('view', 'guest', {
+				maxAge: -1000
+			})
+			]
+		);
+		
+		//redirect to log-in
+		res.send(html);
+			
+	} catch (e) {
+		next(e)
+	}
+
+});
+
+
+/****************************************************************************
+Handling page content calls (create, read, update, delete)
+****************************************************************************/
+
+//get user's profile
+app.get('/profile', function(req, res, next) {
+	var cookies = cookie.parse(req.headers.cookie || '');
+	var id = cookies.id;
+	
+	res.redirect('/profile/' + id);
+
+});
+
+app.get('/profile/*', function(req, res, next) {
+	var cookies = cookie.parse(req.headers.cookie || '');
+	
+	try {
+		var data = {
+			titleString: 'Profile',
+			view: cookies.permission,
+			greetingName: cookies.name
+			
+		}
+		
+		var html = template.renderFile(__dirname + '/static/profile.jade', data);
+
+		res.send(html);
+	} catch(e) {
+		next(e);
+	}
+});
+
+//handle adding announcement
+app.post('/add-announcement', function(req, res, next) { 
+	var cookies = cookie.parse(req.headers.cookie || '');
+	
+	var formData = req.body;
+	
+	var title = formData['announcement-title'];
+	var content = formData['announcement-content'];
+	
+	db.run("insert into Announcements(id, poster, date, title, content) \
+		values(?, ?, datetime('now', 'localtime'), ?, ?);", 
+		[null, cookies.id, title, content],
+		
+	function(err) {
+			
+			//null, cookies.id, select date('now'), title. content
+		var status = {modified: false};	
+		if(err) {
+			console.log(err);
+			status['message'] = "Server error, please try again";
+			
+			//send old announcements
+			db.all("select * from Announcements order by date desc limit 10", function(err, rows) {
+				if(err) {
+					console.log(err);
+				}
+				
+				try {
+					var data = {
+						view: cookies.view,
+						greetingName: cookies.name,
+						
+						announcementTitle: title, 
+						announcementContent: content,
+						
+						announcements: rows,
+						addAnnoucementStatus: "Error, please try again"
+					}
+					
+					var html = template.renderFile(__dirname + "/static/announcements.jade", data);
+					
+					res.send(html);
+			
+				} catch(e) {
+					next(e);
+				}
+			});
+		}
+		
+		else {
+			//send updated announcements
+			db.all("select * from Announcements order by date desc limit 10", function(err, rows) {
+				if(err) {
+					console.log(err);
+				}
+				
+				try {
+					var data = {
+						view: cookies.view,
+						greetingName: cookies.name,
+						
+						announcements: rows,
+						addAnnoucementStatus: "Successfully added link"
+					}
+					
+					var html = template.renderFile(__dirname + "/static/announcements.jade", data);
+					
+					res.send(html);
+			
+				} catch(e) {
+					next(e);
+				}
+			});
+		
+		}
+			
+	});
+});
+
+//delete Announcement
+app.delete('/Announcement/*', function(req, res, next) {
+	var cookies = cookie.parse(req.headers.cookie || '');
+
+	var announcementId = req.params[0];
+	
+	db.run("delete from Announcements where id=?", [announcementId], function(err) {
+		if(err) {
+			console.log(err);
+		}
+		
+		//no errors = send updated page
+		else {
+			db.all("select * from Announcements order by date desc limit 10", function(err, rows) {
+				if(err) {
+					console.log(err);
+				}
+				
+				try {
+					var data = {
+						view: cookies.view,
+						greetingName: cookies.name,
+						
+						announcements: rows
+					}
+					
+					var html = template.renderFile(__dirname + "/static/announcements.jade", data);
+					
+					res.send(html);
+			
+				} catch(e) {
+					next(e);
+				}
+			});
+		}
+	
+	});
+});
+
 //get course links list
 app.get('/CourseLinks', function(req, res, next) {
 	var cookies = cookie.parse(req.headers.cookie || '');
@@ -371,7 +584,8 @@ app.get('/CourseLinks', function(req, res, next) {
 				var data = {
 					titleString: "Course Links",
 					links: rows,
-					view: cookies.view
+					view: cookies.view,
+					greetingName: cookies.name,
 				}
 				
 				var html = template.renderFile(__dirname + "/static/courselinks.jade", data);
@@ -392,7 +606,7 @@ app.post('/addlink-form', function(req, res, next) {
 	
 	var cookies = cookie.parse(req.headers.cookie || '');
 	
-	var status = checkAddLinkForm(formData); //used to display error messagesback on page
+	var status = checkAddLinkForm(formData); //used to display error messages back on page
 	
 	//form data fields
 	var name = formData['link-name'];
@@ -401,7 +615,7 @@ app.post('/addlink-form', function(req, res, next) {
 	
 	//if there was some error
 	if(status['modified']) {
-		console.log("Failed submit");
+	
 		db.all("select * from CourseLinks order by name", function(err, rows) {
 			if(err) {
 				status['addLinkStatus'] = "Server error, please try again";
@@ -417,7 +631,9 @@ app.post('/addlink-form', function(req, res, next) {
 					linkDescValue: desc,
 					links: rows,
 					addLinkStatus: status['addLinkStatus'], 
+					
 					view: cookies.view,
+					greetingName: cookies.name
 				}
 				
 				var html = template.renderFile(__dirname + "/static/links.jade", data);
@@ -458,7 +674,9 @@ app.post('/addlink-form', function(req, res, next) {
 							linkDescValue: desc,
 							links: rows,
 							addLinkStatus: status['addLinkStatus'], 
+							
 							view: cookies.view,
+							greetingName: cookies.name
 						}
 						
 						var html = template.renderFile(__dirname + "/static/links.jade", data);
@@ -481,6 +699,8 @@ app.post('/addlink-form', function(req, res, next) {
 					try {
 						var data = {
 							view: cookies.view,
+							greetingName: cookies.name,
+							
 							links: rows,
 							addLinkStatus: "Successfully added link"
 						}
@@ -519,6 +739,8 @@ app.delete('/CourseLinks/*', function(req, res, next) {
 				try {
 					var data = {
 						view: cookies.view,
+						greetingName: cookies.name,
+						
 						links: rows
 					}
 					
@@ -561,6 +783,8 @@ app.post('/UpdateLink/*', function(req, res, next) {
 				try {
 					var data = {
 						view: cookies.view,
+						greetingName: cookies.name,
+						
 						links: rows, 
 						addLinkStatus: "Successfully updated link"
 					}
@@ -577,6 +801,7 @@ app.post('/UpdateLink/*', function(req, res, next) {
 	
 	});
 });
+
 
 /**************************************************/
 //start server

@@ -1,6 +1,6 @@
 mixin courseLinkBlock(data)
 	div(class="course-link")
-		h1(class="course-link-name")
+		h2(class="course-link-name")
 			a(href=data.link class="course-link-name-link")=data.name
 		a(href=data.link class="course-link-url")=data.link
 		p(class="course-link-description")=data.description
@@ -9,19 +9,19 @@ mixin adminCourseLinkBlock(data)
 	//- ex. 1-div
 	-var divId = data.id + "-div"
 	div(id=divId class="course-link")
-		h1(class="course-link-name")
+		h2(class="course-link-name")
 			a(href=data.link class="course-link-name-link")=data.name
 		a(href=data.link class="course-link-url")=data.link
 		p(class="course-link-description")=data.description
 		
 		//- ex. 1-div-modify-buttons
 		-var buttonDivId = divId + "-modify-buttons"
-		div(id=buttonDivId class="course-link-modify-buttons")
+		div(id=buttonDivId class="modify-buttons")
 			//- ex. 1-update-button
 			-var updateButtonId = data.id + "-update-button"
-			button(id=updateButtonId class="update-link-button" onclick="updateClicked(this)") Update
+			button(id=updateButtonId class="update-button" onclick="updateClicked(this)") Update
 			-var deleteButtonId = data.id + "-delete-button"
-			button(id=deleteButtonId class="delete-link-button" onclick="deleteClicked(this)") Delete
+			button(id=deleteButtonId class="delete-button" onclick="deleteClicked(this)") Delete
 		
 		
 
@@ -33,7 +33,7 @@ if(view == 'guest' || view == 'student')
 else if(view == 'admin')
 
 	div(id="course-links-div")
-		p(id="add-link-status")=addLinkStatus
+		h2(id="add-link-status" class="status-message")=addLinkStatus
 		
 		button(id="show-add-form-button") Add Link
 		
@@ -42,17 +42,17 @@ else if(view == 'admin')
 				h1 Add a link
 				p Please fill out all fields
 				
-				label(id="add-link-name-label" class="add-link-label") 
+				label(id="add-link-name-label" class="add-form-label") 
 					strong Link Name
 					
 				input(id="add-link-name" type="text" name="link-name" size="30" placeholder="Name" value=linkNameValue required)
 				
-				label(id="add-link-url-label" class="add-link-label")
+				label(id="add-link-url-label" class="add-form-label")
 					strong Link
 					
 				input(id="add-link-url" type="url" name="link-url" size="30" placeholder="URL" value=linkURLValue required)
 				
-				label(id="add-link-description-label" class="add-link-label")
+				label(id="add-link-description-label" class="add-form-label")
 					strong Description
 					
 				textarea(id="add-link-desc" name="link-desc" cols="100" rows="10" placeholder="Description" value=linkDescValue)
@@ -61,7 +61,7 @@ else if(view == 'admin')
 				
 				button(id="hide-add-form-button") Cancel
 		
-		each val, index in links
+		each val in links
 			+adminCourseLinkBlock(val)
 	
 	script.
@@ -157,7 +157,7 @@ else if(view == 'admin')
 			var formHtml = ' \
 				<input type="text" name="update-link-name" size="30" value="' + name + '"> \
 				<br/> \
-				<input type="text" name="update-link-url" size="30" value="' + url + '"> \
+				<input type="url" name="update-link-url" size="30" value="' + url + '"> \
 				<textarea name="update-link-desc" cols="100" rows="10">' + desc + '</textarea> \
 				<button id="' + clickedId + '-submit-link-update" class="input-button submit-update-button" onclick="submitUpdate(this)">Submit</button> \
 				<button id="' + clickedId + '-hide-link-update-button" class="cancel-update-button input-button" onclick="cancelUpdate(this)">Cancel</button> \

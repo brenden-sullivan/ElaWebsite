@@ -44,7 +44,7 @@ module.exports = {
 				"writer integer, book integer not null," +
 				"text varchar(255)," + 
 				"score integer not null check(score >= 1 and score <= 5)," +
-				"date varchar(20) not null," +
+				"date text not null," +
 				"foreign key(writer) references People(id) on update cascade on delete set null," +
 				"foreign key(book) references Books(id) on update cascade on delete cascade" +
 				");"
@@ -55,14 +55,26 @@ module.exports = {
 		//Documents(id, person, date, assignment_name, path)
 		db.run("create table if not exists Documents (" +
 				"id integer primary key autoincrement," +
-				"person integer not null, date varchar(20), assignment_name varchar(50)," +
-				"path varchar(100),"+
+				"person integer not null, date text not null, assignment_name varchar(50)," +
+				"path varchar(100) not null, original_name varchar(100),"+
 				"foreign key(person) references People(id) on delete cascade on update cascade" +
 				");"
 				, [], function(err) {
 					//console.log(err);
 				});
+				
+		//Announcements(id, poster, date, title, content)
+		db.run("create table if not exists Announcements (" +
+				"id integer primary key autoincrement," +
+				"poster integer not null, date text not null, title varchar(30)," +
+				"content varchar(255)," +
+				"foreign key(poster) references People(id) on update cascade on delete cascade" +
+				");"
+				, [], function(err) {
+					//console.log(err);
+				});
 		
+		//AdminConfig(student_key, admin_key)
 		db.run("create table if not exists AdminConfig(" +
 				"student_key varchar(20), admin_key varchar(20)" +
 				");"
@@ -96,18 +108,27 @@ module.exports = {
 			//console.log(err);
 		});
 		
-		*/
-		
 		db.all("select * from AdminConfig;" , [], function(err, rows) {
 			//console.log("People");
 			//console.log(err);
 			//console.log(rows);
 		});
-		
-		db.all("select * from CourseLinks;" , [], function(err, rows) {
+		db.all("select * from Announcements;" , [], function(err, rows) {
 			//console.log("Links");
 			//console.log(err);
-			//console.log(rows);
+			console.log(rows);
 		});
+		*/
+	},
+	
+	clearStudentData: function(db) {
+		db.run("delete from People");
+		db.run("delete from Documents");
+		db.run("delete from Announcements");
+	},
+	
+	rebuild: function(db) {
+		//drop all tables and re-create them
+	
 	}
 }

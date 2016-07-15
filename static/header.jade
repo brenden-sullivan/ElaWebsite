@@ -1,0 +1,22 @@
+div(id="header-div")
+	header(id="page-header")
+		ul(id="header-links")
+			li(class="header-elements")
+				a(id="home-link" href="/") Home
+			li(class="header-elements")
+				a(id="courselinks-link" href="/CourseLinks") Links
+	
+	if(view == 'student' || view == 'admin')
+		div(id="actions-div")
+			label(id="profile-label")="Hello, " + greetingName
+			a(id="logout-button" class="button-link small-button" href="/logout") Log Out 
+			a(id="profile-button" class="button-link small-button" href="/profile") Profile
+
+	else if(view == 'guest')
+		div(id="actions-div")
+			label(id="profile-label") Hello, Guest
+			
+			a(id="logout-button" class="button-link small-button" href="/logout") Sign In
+			
+			form(id="signup-button-form" class="button-form" method="POST" action="/signup-form")
+				input(id="create-button" class="button-input small-button" type="submit" value="Sign Up")
