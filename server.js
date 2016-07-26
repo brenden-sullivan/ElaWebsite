@@ -26,12 +26,12 @@ var storage = multer.diskStorage({
 		try {
 			fs.statSync(dataPath + "uploads/")
 		} catch(e) {
-			fs.mkdir(dataPath + "uploads/");
+			fs.mkdirSync(dataPath + "uploads/");
 		}
 		try {
 			fs.statSync(dataPath + "uploads/" + cookies.id)
 		} catch(e) {
-			fs.mkdir(dataPath + "uploads/" + cookies.id);
+			fs.mkdirSync(dataPath + "uploads/" + cookies.id);
 		}
 		
 		cb(null, dataPath + 'uploads/' + cookies.id)
@@ -757,7 +757,7 @@ app.post('/documents-upload', upload.single('file'), function(req, res, next) {
 		}
 		try {
 			var data = {
-				titleString: "Course Links",
+				titleString: "Writing",
 				view: cookies.view,
 				greetingName: cookies.name,
 				
