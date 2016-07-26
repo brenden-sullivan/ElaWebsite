@@ -2,3 +2,10 @@ extends template.jade
 
 block page-content
 	h1 Profile
+	
+	div(id="standard-profile")
+		include ./standardprofile.jade
+	
+	if(view == 'admin')
+		div(id="admin-toolbar")
+			include ./admintoolbar.jade

@@ -6,9 +6,7 @@ var fs = require('fs');
 
 //sqlite3
 var sqlite3 = require('sqlite3').verbose();
-var dataPath = process.env.OPENSHIFT_DATA_DIR || './data/'; //also used for files
-//var hostdb = dataPath + 'database.db';
-//var dbpath = './data/database.db'; // || hostdb
+var dataPath = process.env.OPENSHIFT_DATA_DIR || 'data/'; //also used for files
 var dbpath = dataPath + 'database.db';
 var db = new sqlite3.Database(dbpath);
 var dbsetup = require("./dbsetup.js");
@@ -21,6 +19,30 @@ var bodyParser = require('body-parser');
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
+var multer = require('multer');
+var storage = multer.diskStorage({
+	destination: function (req, file, cb) {
+		var cookies = cookie.parse(req.headers.cookie || '');
+		try {
+			fs.statSync(dataPath + "uploads/")
+		} catch(e) {
+			fs.mkdir(dataPath + "uploads/");
+		}
+		try {
+			fs.statSync(dataPath + "uploads/" + cookies.id)
+		} catch(e) {
+			fs.mkdir(dataPath + "uploads/" + cookies.id);
+		}
+		
+		cb(null, dataPath + 'uploads/' + cookies.id)
+	},
+	filename: function (req, file, cb) {
+		var cookies = cookie.parse(req.headers.cookie || '');
+		cb(null, file.originalname)
+	}
+});
+var upload = multer({storage: storage});
+
 //support cookies
 var cookie = require('cookie');
 
@@ -28,7 +50,9 @@ var cookie = require('cookie');
 var validator = require('validator');
 
 //define static directory
-app.use(express.static(__dirname + '/static'));
+//app.use('/static', express.static(__dirname + '/static'));
+console.log(dataPath);
+app.use('/x', express.static(dataPath));
 
 //home
 app.get('/', function(req, res, next) {
@@ -51,28 +75,42 @@ app.get('/', function(req, res, next) {
 	}
 	
 	else {
-		db.all("select * from Announcements order by date desc limit 10", function(err, rows) {
+		var sql = "select Announcements.id, Announcements.date, Announcements.title, \
+				    Announcements.content, People.first_name, People.last_name \
+				   from Announcements join People on Announcements.poster = People.id \
+				   order by Announcements.date desc \
+				   limit 10;";
+				   
+		db.all(sql, function(err, rows) {
 			if(err) {
-				console.log(err);
+				logErrors(err);
 			}
 			
-			try {
-				var data = {
-					titleString: 'Home',
-					
-					view: cookies.view,
-					greetingName: cookies.name,
-					
-					announcements: rows
+			db.all("select id, first_name, last_name from people where permission = 'admin';", function(err, people) {
+				if(err) {
+					logErrors(err);
 				}
 				
-				var html = template.renderFile(__dirname + "/static/index.jade", data);
+				try {
+					var data = {
+						titleString: 'Home',
+						
+						view: cookies.view,
+						greetingName: cookies.name,
+						
+						announcements: rows,
+						posters: people
+					}
+					
+					var html = template.renderFile(__dirname + "/static/index.jade", data);
+					
+					res.send(html);
+			
+				} catch(e) {
+					next(e);
+				}
 				
-				res.send(html);
-		
-			} catch(e) {
-				next(e);
-			}
+			});
 		});
 	}
 });
@@ -96,7 +134,7 @@ app.post('/login', function(req, res, next) {
 		//username not in db
 		if(rows.length == 0) {
 			try {
-				var errorString = "Username incorrect, try again or sign up";
+				var errorString = "Unknown username, try again or sign up";
 				var data = {
 					titleString: 'Log In', 
 					statusString: errorString
@@ -141,7 +179,7 @@ app.post('/login', function(req, res, next) {
 					
 				res.send(html);
 			} catch (e) {
-				console.log(err);
+				logErrors(err);
 				next(e);
 			}
 		}
@@ -229,14 +267,14 @@ app.post('/signup', function(req, res, next) {
 	//check that access code is correct
 	db.all("select * from AdminConfig", function(err, rows) {
 		if(err) {
-			console.log(err);
+			logErrors(err);
 		}
 		
 		else if((access != rows[0].student_key) 
 			&& (access != rows[0].admin_key)) {
 			
 			statuses['accessCodeStatus'] = "Invalid access code";
-			status['modified'] = true;
+			statuses['modified'] = true;
 		}
 		
 		var studentKey = rows[0].student_key;
@@ -249,14 +287,13 @@ app.post('/signup', function(req, res, next) {
 			
 			//error handle
 			if(err) {
-				console.log(err);
+				logErrors(err);
 			}
 			
 			//if username taken (i.e. there is  a row with that username)
 			else if(rows.length > 0) {
-				console.log("username");
 				statuses['accountStatus'] = "Username taken, please choose another one.";
-				status['modified'] = true;
+				statuses['modified'] = true;
 			}
 			
 			////////////////////////////////////////////////////////////
@@ -293,7 +330,6 @@ app.post('/signup', function(req, res, next) {
 		
 		
 			else {
-				//console.log("success");
 				
 				//get permission associated with key provided
 				var permission;
@@ -310,39 +346,42 @@ app.post('/signup', function(req, res, next) {
 				var hashPass = require('crypto').createHash('md5').update(password).digest('hex');
 				var stmt = db.prepare("insert into People(username, password, first_name, last_name, email, permission)" +
 					"values (?,?,?,?,?,?);");
-					
-				stmt.run([username, hashPass, first, last, email, permission]); 
 				
-				//redirect to home page
-				try {
-					var data = {
-						titleString: 'Re-direct'
-					};
+				stmt.all([username, hashPass, first, last, email, permission], function(err, rows) { 
 					
-					var html = template.renderFile(__dirname + '/static/redirect.jade', data);
+					db.all("select id from People where username = ?", [username], function(err, rows) {
+					//redirect to home page
+					try {
+						var data = {
+							titleString: 'Re-direct'
+						};
 						
-					res.setHeader('Set-Cookie', 
-						[
-						cookie.serialize('id' , rows[0].id, {
-							maxAge: 60 * 60 * 24 * 7 //a week
-						}),
-						cookie.serialize('name' , first, {
-							maxAge: 60 * 60 * 24 * 7 //a week
-						}), 
-						cookie.serialize('permission', permission, {
+						var html = template.renderFile(__dirname + '/static/redirect.jade', data);
+							
+						res.setHeader('Set-Cookie', 
+							[
+							cookie.serialize('id' , rows[0].id, {
+								maxAge: 60 * 60 * 24 * 7 //a week
+							}),
+							cookie.serialize('name' , first, {
+								maxAge: 60 * 60 * 24 * 7 //a week
+							}), 
+							cookie.serialize('permission', permission, {
+								maxAge: 60 * 60 * 24 * 7 * 52 //a year
+							}),
+							cookie.serialize('view', permission, {
 							maxAge: 60 * 60 * 24 * 7 * 52 //a year
-						}),
-						cookie.serialize('view', permission, {
-						maxAge: 60 * 60 * 24 * 7 * 52 //a year
-						})
-						]
-					);
-					
-					res.send(html);
-					
-				} catch (e) {
-					next(e)
-				}
+							})
+							]
+						);
+						
+						res.send(html);
+						
+					} catch (e) {
+						next(e)
+					}
+					});
+				});
 			}
 		}); //end username db call
 	}); //end permission db call	
@@ -453,6 +492,79 @@ app.get('/profile/*', function(req, res, next) {
 	}
 });
 
+//Filtered announcements
+app.get("/Announcements/*", function(req, res, next) {
+	var id = req.params[0];
+	var cookies = cookie.parse(req.headers.cookie || '');
+	
+	//case where we want all announcements
+	if(id == "all") {
+		sql = "select Announcements.id, Announcements.date, Announcements.title \
+				   Announcements.content, People.first_name, People.last_name \
+				   from Announcements join People on Announcements.poster = People.id \
+				   order by Announcements.date desc \
+				   limit 10;";
+				   
+		db.all(sql, function(err, rows) {
+			if(err) {
+				logErrors(err);
+			}
+				
+			try {
+				var data = {
+					titleString: 'Home',
+					
+					view: cookies.view,
+					greetingName: cookies.name,
+					
+					announcements: rows
+				}
+				
+				var html = template.renderFile(__dirname + "/static/announcements.jade", data);
+				
+				res.send(html);
+		
+			} catch(e) {
+				next(e);
+			}
+		});
+	}
+	
+	//want one admins announcements
+	else{
+		var sql = "select Announcements.id, Announcements.date, Announcements.title, \
+				   Announcements.content, People.first_name, People.last_name \
+				   from Announcements join People on Announcements.poster = People.id \
+				   where People.id = ? \
+				   order by Announcements.date desc \
+				   limit 10;";
+				   
+		db.all(sql, [id], function(err, rows) {
+			if(err) {
+				logErrors(err);
+			}
+				
+			try {
+				var data = {
+					titleString: 'Home',
+					
+					view: cookies.view,
+					greetingName: cookies.name,
+					
+					announcements: rows
+				}
+				
+				var html = template.renderFile(__dirname + "/static/announcements.jade", data);
+				
+				res.send(html);
+		
+			} catch(e) {
+				next(e);
+			}
+		});
+	}
+});
+
 //handle adding announcement
 app.post('/add-announcement', function(req, res, next) { 
 	var cookies = cookie.parse(req.headers.cookie || '');
@@ -471,13 +583,19 @@ app.post('/add-announcement', function(req, res, next) {
 			//null, cookies.id, select date('now'), title. content
 		var status = {modified: false};	
 		if(err) {
-			console.log(err);
+			logErrors(err);
 			status['message'] = "Server error, please try again";
 			
 			//send old announcements
-			db.all("select * from Announcements order by date desc limit 10", function(err, rows) {
+			var sql = "select Announcements.id, Announcements.date, Announcements.title, \
+				   Announcements.content, People.first_name, People.last_name \
+				   from Announcements join People on Announcements.poster = People.id \
+				   order by Announcements.date desc \
+				   limit 10;";
+				   
+			db.all(sql, function(err, rows) {
 				if(err) {
-					console.log(err);
+					logErrors(err);
 				}
 				
 				try {
@@ -489,7 +607,7 @@ app.post('/add-announcement', function(req, res, next) {
 						announcementContent: content,
 						
 						announcements: rows,
-						addAnnoucementStatus: "Error, please try again"
+						addAnnouncementStatus: "Error, please try again"
 					}
 					
 					var html = template.renderFile(__dirname + "/static/announcements.jade", data);
@@ -504,9 +622,15 @@ app.post('/add-announcement', function(req, res, next) {
 		
 		else {
 			//send updated announcements
-			db.all("select * from Announcements order by date desc limit 10", function(err, rows) {
+			var sql = "select Announcements.id, Announcements.date, Announcements.title, \
+				   Announcements.content, People.first_name, People.last_name \
+				   from Announcements join People on Announcements.poster = People.id \
+				   order by Announcements.date desc \
+				   limit 10;";
+				   
+			db.all(sql, function(err, rows) {
 				if(err) {
-					console.log(err);
+					logErrors(err);
 				}
 				
 				try {
@@ -530,30 +654,32 @@ app.post('/add-announcement', function(req, res, next) {
 		}
 			
 	});
+
 });
 
 //delete Announcement
-app.delete('/Announcement/*', function(req, res, next) {
+app.delete('/delete-announcements/*', function(req, res, next) {
 	var cookies = cookie.parse(req.headers.cookie || '');
 
 	var announcementId = req.params[0];
 	
 	db.run("delete from Announcements where id=?", [announcementId], function(err) {
 		if(err) {
-			console.log(err);
+			logErrors(err);
 		}
 		
 		//no errors = send updated page
 		else {
 			db.all("select * from Announcements order by date desc limit 10", function(err, rows) {
 				if(err) {
-					console.log(err);
+					logErrors(err);
 				}
 				
 				try {
 					var data = {
 						view: cookies.view,
 						greetingName: cookies.name,
+						titleString: "Home",
 						
 						announcements: rows
 					}
@@ -571,13 +697,93 @@ app.delete('/Announcement/*', function(req, res, next) {
 	});
 });
 
+//get documents page
+app.get('/Documents', function(req, res, next) {
+	var cookies = cookie.parse(req.headers.cookie || '');
+
+	var sql = "select Documents.id, Documents.date, Documents.assignment_name, \
+			   Documents.path, Documents.original_name, People.first_name, People.last_name \
+			   from Documents join People on Documents.person = People.id \
+			   order by Documents.date desc;";
+	
+	db.all(sql, function(err, rows) { 
+		if(err) {
+			logErrors(err);
+		}
+		try {
+			var data = {
+				titleString: "Writing",
+				view: cookies.view,
+				greetingName: cookies.name,
+				
+				uploads: rows
+			}
+			
+			var html = template.renderFile(__dirname + "/static/documents.jade", data);
+
+			res.send(html);
+
+		} catch(e) {
+			next(e);
+		}
+	});
+
+});
+
+//handle upload of document
+app.post('/documents-upload', upload.single('file'), function(req, res, next) {
+	var cookies = cookie.parse(req.headers.cookie || '');
+	
+	var formData = req.body;
+	var file = req.file;
+	
+	db.serialize(function() {
+	//Documents(id, person, date, assignment_name, path, original_name)
+	db.run("insert into Documents values(?,?, datetime('now', 'localtime'),?,?,?)", 
+		[null, cookies.id, formData['assignment'], file.path, file.originalname],
+		function(err) {
+			if(err) { logErrors(err); }
+		}
+	);
+	
+	var sql = "select Documents.id, Documents.date, Documents.assignment_name, \
+			   Documents.path, Documents.original_name, People.first_name, People.last_name \
+			   from Documents join People on Documents.person = People.id \
+			   order by Documents.date desc;";
+			   
+	db.all(sql, function(err, rows) { 
+		if(err) {
+			logErrors(err);
+		}
+		try {
+			var data = {
+				titleString: "Course Links",
+				view: cookies.view,
+				greetingName: cookies.name,
+				
+				uploads: rows
+			}
+			
+			var html = template.renderFile(__dirname + "/static/uploads.jade", data);
+
+			res.send(html);
+
+		} catch(e) {
+			next(e);
+		}
+	});
+	
+	});// end serialize
+	
+});
+
 //get course links list
 app.get('/CourseLinks', function(req, res, next) {
 	var cookies = cookie.parse(req.headers.cookie || '');
 	
 	db.all("select * from CourseLinks order by name", function(err, rows) {
 		if(err) {
-			console.log(err);
+			logErrors(err);
 		}
 		else if (rows) {
 			try {
@@ -619,7 +825,7 @@ app.post('/addlink-form', function(req, res, next) {
 		db.all("select * from CourseLinks order by name", function(err, rows) {
 			if(err) {
 				status['addLinkStatus'] = "Server error, please try again";
-				console.log(err);
+				logErrors(err);
 			}
 			
 			try {
@@ -652,7 +858,7 @@ app.post('/addlink-form', function(req, res, next) {
 		//try to insert new link
 		db.run("insert into CourseLinks(name, link, description) values(?,?,?)", [name, url, desc], function(err) {
 			if(err) {
-				console.log(err);
+				logErrors(err);
 				
 				if(err.errno == 19) {
 					status['addLinkStatus'] = "Name already used, please enter a unique name";
@@ -693,7 +899,7 @@ app.post('/addlink-form', function(req, res, next) {
 			else {
 				db.all("select * from CourseLinks order by name", function(err, rows) {
 					if(err) {
-						console.log(err);
+						logErrors(err);
 					}
 					
 					try {
@@ -726,14 +932,14 @@ app.delete('/CourseLinks/*', function(req, res, next) {
 	
 	db.run("delete from CourseLinks where id=?", [linkId], function(err) {
 		if(err) {
-			console.log(err);
+			logErrors(err);
 		}
 		
 		//no errors = send updated page
 		else {
 			db.all("select * from CourseLinks order by name", function(err, rows) {
 				if(err) {
-					console.log(err);
+					logErrors(err);
 				}
 				
 				try {
@@ -770,14 +976,14 @@ app.post('/UpdateLink/*', function(req, res, next) {
 	
 	db.run("update CourseLinks set name=?, link=?, description=? where id=?", [name, url, desc, linkId], function(err) {
 		if(err) {
-			console.log(err);
+			logErrors(err);
 		}
 		
 		//no errors = send updated page
 		else {
 			db.all("select * from CourseLinks order by name", function(err, rows) {
 				if(err) {
-					console.log(err);
+					logErrors(err);
 				}
 				
 				try {
@@ -802,6 +1008,101 @@ app.post('/UpdateLink/*', function(req, res, next) {
 	});
 });
 
+/**********************************************************
+* Admin tools
+***********************************************************/
+//rebuild database (drop tables, rebuild them, and add webmaster account and signup keys)
+app.post('/database/rebuild', function(req, res, next) {
+	var cookies = cookie.parse(req.headers.cookie || '');
+	
+	if(cookies.permission == 'admin') {
+		dbsetup.rebuild(db);
+	}
+	
+	res.redirect('/logout');
+	
+
+});
+
+//directly submit sql to be run
+app.post('/database/sql', function(req, res, next) {
+	var cookies = cookie.parse(req.headers.cookie || '');
+	var sql = req.body['sql-command'];
+	
+	//only do this if the request comes from admin
+	if(cookies.permission == 'admin') {
+		//attempt to run the sql provided
+		db.run(sql, function(err) {
+			//if err reload the page with status message of the error
+			if(err) {
+				logErrors(err);
+				
+				try {
+					var data = {
+						titleString: 'Profile',
+						view: cookies.permission,
+						greetingName: cookies.name,
+						
+						sqlStatus: err
+					}
+					
+					var html = template.renderFile(__dirname + '/static/profile.jade', data);
+
+					res.send(html);
+				} catch(e) {
+					next(e);
+				}
+			}
+			
+			//else reload with status of success
+			else {
+				try {
+					var data = {
+						titleString: 'Profile',
+						view: cookies.permission,
+						greetingName: cookies.name,
+						
+						sqlStatus: "Success"
+					}
+					
+					var html = template.renderFile(__dirname + '/static/profile.jade', data);
+
+					res.send(html);
+				} catch(e) {
+					next(e);
+				}
+			
+			}
+		});
+	}
+});
+
+//clear student data to "start a new year"
+app.post('/database/clear-students', function(req, res, next) {
+	var cookies = cookie.parse(req.headers.cookie || '');
+	
+	//only do this if the request comes from admin
+	if(cookies.permission == 'admin') {
+		dbsetup.clearStudentData(db, fs);
+		
+		try {
+			var data = {
+				titleString: 'Profile',
+				view: cookies.permission,
+				greetingName: cookies.name,
+				
+				clearStudentStatus: "Success"
+			}
+			
+			var html = template.renderFile(__dirname + '/static/profile.jade', data);
+
+			res.send(html);
+		} catch(e) {
+			next(e);
+		}
+	}
+
+});
 
 /**************************************************/
 //start server
@@ -924,5 +1225,11 @@ function sanitizeForm(data) {
 	console.log(data)
 	
 	return data;
+}
+
+//function to handle error logging
+//for now just console.log, but could change to more advanced loggin later
+function logErrors(err) {
+	console.log(err);
 }
 

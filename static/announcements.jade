@@ -1,14 +1,16 @@
 mixin announcementBlock(data)
 	div(class="announcement-div")
 		h2(class="announcement-title")=data.title
-		label(class="date-label")=data.date
-		p(class="announcement-content")=data.content
+		
+		//-Displays as rendered html
+		-var htmlContent = data.content
+		p(class="announcement-content") !{htmlContent}
+		
+		-var dateLabel = "Posted On " + data.date + " by " + data.first_name + " " + data.last_name
+		label(class="date-label")=dateLabel
 		
 mixin adminAnnouncementBlock(data)
-	div(class="announcement-div")
-		h2(class="announcement-title")=data.title
-		label(class="date-label")=data.date
-		p(class="announcement-content")=data.content
+		+announcementBlock(data)
 		
 		div(class="modify-buttons")
 			-var deleteButtonId = data.id + "-delete-button"
@@ -21,38 +23,55 @@ if(view == 'student' || view == 'guest')
 			
 else if(view == 'admin')
 	div(id="announcements-div")
-		
-		h2(id="add-announcement-status" class="status-message")=addAnnouncementStatus
-		
-		button(id="show-add-form-button") Add
+		div(id="announcements-add-button-div" class="add-content")
+			h3(id="add-announcement-status" class="status-message")=addAnnouncementStatus
+			
+			button(id="show-add-form-button" class="add-button") Make Announcement
 		
 		div(id="add-announcement-form")
-			form(id="add-course-link-form" action="/add-announcement" method="POST")
-				h1 Make an announcement
-				p Please fill out all fields
-				
-				label(id="add-announcement-name-label" class="add-form-label") 
+			form(id="add-course-link-form" action="/add-announcement" method="POST" novalidate)
+				label(id="add-announcement-content-label" class="add-form-label")
 					strong Title
 					
 				input(id="add-announcement-title" type="text" name="announcement-title" size="30" placeholder="Title" value=announcementTitle required)
-				
+			
 				label(id="add-announcement-content-label" class="add-form-label")
-					strong Description
+					strong Announcement
 					
 				textarea(id="add-announcement-content" name="announcement-content" cols="100" rows="10" placeholder="Announcement" value=announcementContent required)
 				
 				input(id="add-announcement-submit" class="input-button" type="submit" value="Submit")
 				
 				button(id="hide-add-form-button") Cancel
-		
-		
-		
+					
 		
 		each val in announcements
 			+adminAnnouncementBlock(val)
 	
 	script.
+		$("#add-announcement-content").load(function() {
+			tinymce.execCommand('mceAddControl', false, 'add-announcement-content');
+		});
+		
 		$(document).ready(function() {
+		
+			tinymce.init({
+			  selector: 'textarea',
+			  mode: "none",
+			  height: 300,
+			  plugins: [
+				'advlist autolink lists link image charmap print preview anchor',
+				'searchreplace visualblocks code fullscreen',
+				'insertdatetime media table contextmenu paste code'
+			  ],
+			  toolbar: 'insertfile undo redo | styleselect | fontsizeselect | bold italic underline | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image',
+			  content_css: [
+				'//fast.fonts.net/cssapi/e6dc9b99-64fe-4292-ad98-6974f93cd2a2.css',
+				'//www.tinymce.com/css/codepen.min.css'
+			  ],
+			  fontsize_formats: '8pt 10pt 12pt 14pt 18pt 24pt 36pt'
+			});
+		
 			//-form hidden by default
 			$("#add-announcement-form").toggle();
 			
@@ -71,6 +90,12 @@ else if(view == 'admin')
 					
 					success: function(data) {
 						$("#announcements-content").html(data);
+						location.reload(true);
+					},
+					
+					//re-add rich text area to form
+					complete: function() {
+						tinymce.execCommand('mceAddControl', false, 'add-announcement-content');
 					}
 				
 				});
@@ -96,7 +121,6 @@ else if(view == 'admin')
 			return false;
 		}); //end document.ready
 		
-		
 		//called when a delete button is clicked
 		function deleteClicked(button) {
 			var splitString = button.id.split("-");
@@ -106,12 +130,18 @@ else if(view == 'admin')
 			
 			if(confirm == true) {
 				$.ajax({
-					url: "/Announcements/" + clickedId,
+					url: "/delete-announcements/" + clickedId,
 					type: "DELETE",
 					dataType: "html",
 					
 					success: function(data) {
-						$("#course-links-content").html(data);
+						$("#announcements-content").html(data);
+						location.reload(true);
+					},
+					
+					//re-add rich text area to form
+					complete: function() {
+						tinymce.execCommand('mceAddControl', false, 'add-announcement-content');
 					}
 				
 				});

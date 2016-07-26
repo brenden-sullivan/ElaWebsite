@@ -1,0 +1,129 @@
+mixin uploadsRow(data)
+	div(class="uploads-row-div")
+		-var docId = data.id + "-table-row"
+		tr(id=docId)
+			td=data.first_name
+			td=data.last_name
+			td=data.assignment_name
+			td
+				-var link = "x/" + data.path
+				a(href=link target="_blank")=data.original_name
+			td=data.date
+
+
+mixin adminUploadsRow(data)
+	+uploadsRow(data)
+	//-TODO: add delete button for admins
+	
+mixin uploadForm
+	div(id="document-upload-form-div")
+		form(id="documents-add-form" action="documents-upload" method="POST" encType="multipart/form-data")
+			label(class="add-form-label")
+				strong Assignment Name:
+			input(id="add-assignment-name-input" name="doc-assignment-name" type="text" size="30" placeholder="Assignment" value=docAssignName required)
+		
+			label(class="add-form-label")
+				strong Upload Document:
+			input(id="add-assignment-doc-input" name="doc-doc" type="file" required)
+			
+			input(id="add-doc-submit" class="input-button" type="submit" value="Submit")
+			
+			button(id="hide-add-form-button") Cancel
+
+	script.
+		$(document).ready(function() {
+			
+			//-form hidden by default
+			$("#document-upload-form-div").toggle();
+			
+			//-add form submit as ajax call
+			$("#documents-add-form").submit(function(e) {
+				e.preventDefault();
+				
+				var assignIn = $("#add-assignment-name-input");
+				
+				var fileIn = $("#add-assignment-doc-input");
+				var file = fileIn[0].files[0];
+				
+				var inputs = new FormData();
+				inputs.append('file', file, file.name);
+				inputs.append('assignment', assignIn.val());
+				//console.log(inputs);
+				
+				$.ajax({
+					url: "/documents-upload",
+					type: "POST",
+					dataType: "html",
+					
+					contentType: false,
+					processData: false,
+					
+					data: inputs,
+					
+					success: function(data) {
+						$("#documents-content").html(data);
+					}
+				
+				});
+				
+				return false;
+			});
+			
+			//-these two are to show and hide the add form
+			$("#show-add-form-button").click(function() {
+				tinymce.EditorManager.remove();
+			
+				$("#document-upload-form-div").toggle();
+				
+				$("#show-add-form-button").toggle();
+			
+				return false;
+			});
+			
+			$("#hide-add-form-button").click(function() {
+				$("#document-upload-form-div").toggle();
+				
+				$("#show-add-form-button").toggle();
+				
+				return false;
+			});
+		}); //end document.ready
+
+if(view == 'student' || view == 'admin')
+	div(id="uploads-div")
+		div(id="documents-add-button-div" class="add-content")
+			h3(id="add-document-status" class="status-message")=addDocumentStatus
+			
+			button(id="show-add-form-button" class="add-button") Upload
+		
+		+uploadForm
+			
+		div(id="uploads-table-div")
+			table(id="uploads-table")
+				tr(class="table-header")
+					th First
+					th Last
+					th Assignment
+					th Preview
+					th Date Uploaded
+					
+				each val in uploads
+					if(view == 'student')
+						+uploadsRow(val)
+					else if(view == 'admin')
+						+adminUploadsRow(val)
+										
+else if(view == 'guest')
+	div(id="uploads-div")
+
+		div(id="uploads-table-div")
+			table(id="uploads-table")
+				tr(class="table-header")
+					th First
+					th Last
+					th Assignment
+					th Preview
+					th Date Uploaded
+					
+				each val in uploads
+					+uploadsRow(val)

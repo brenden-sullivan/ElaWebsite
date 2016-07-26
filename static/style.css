@@ -12,3 +12,7 @@ textarea {
 label {
 	display: block;
 }
+
+.date-label {
+	font-size: 12px;
+}

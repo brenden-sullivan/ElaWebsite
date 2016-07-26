@@ -1,0 +1,16 @@
+
+div(id="admin-submit-sql-div")
+	h2(class="admin-toolbar-title") Submit SQL Operation
+	h3(class="status-message")=sqlStatus
+	form(id="db-submit-sql-form" action="/database/sql" method="POST")
+		input(type="text" name="sql-command" size="100" placeholder="SQL Command")
+		input(type="submit" class="input-button" value="Submit")
+
+div(id="admin-db-rebuild-div")
+	form(id="db-rebuild-form" action="/database/rebuild" method="POST" onsubmit="return confirm('Are you sure you want to rebuild the database?');")
+		input(type="submit" class="input-button" value="Rebuild DB")
+	
+div(id="admin-db-clear-div")
+	h3(class="status-message")=clearStudentStatus
+	form(id="db-clear-form" action="/database/clear-students" method="POST" onsubmit="return confirm('Are you sure you want to delete all student data?');")
+		input(type="submit" class="input-button" value="Clear Student Data")

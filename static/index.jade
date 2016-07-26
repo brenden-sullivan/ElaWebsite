@@ -1,8 +1,40 @@
 extends template.jade
 
 block page-content
-	h1 Home
+	h1(class="page-title") Home
 	
+	div(id="announcements-filter")
+		label(class="filter-label") Show announcements from: 
+		div(id="announcement-filter-selections")
+			button(id="all-announcement-filter-button" class="update-button" onclick="filterClicked(this)") Everyone
+			each val in posters
+				+announcementFilter(val)
+				
 	div(id="announcements-content")
 		include ./announcements.jade
 		
+		
+	script.
+		function filterClicked(button) {
+			var splitString = button.id.split("-");
+			var clickedId = splitString[0];
+		
+			$.ajax({
+				url: "/Announcements/" + clickedId,
+				type: "GET",
+				dataType: "html",
+				
+				success: function(data) {
+					$("#announcements-content").html(data);
+				}
+			
+			});
+		
+		}
+		
+		
+		
+mixin announcementFilter(data)
+	-var buttonId = data.id + "-announcements-filter-button"
+	-var name = data.first_name + " " + data.last_name
+	button(id=buttonId class="update-button" onclick="filterClicked(this)")=name

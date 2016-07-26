@@ -1,0 +1,11 @@
+extends ./template.jade
+
+block page-content
+	h1(class="page-title") Writing Samples
+	
+	div(id="writing-filters-div")
+		//todo: make writing-filters.jade with search and filter functionalities
+		include ./writing-filters.jade
+		
+	div(id="documents-content")
+		include ./uploads.jade

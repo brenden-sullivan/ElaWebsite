@@ -2,7 +2,7 @@ mixin courseLinkBlock(data)
 	div(class="course-link")
 		h2(class="course-link-name")
 			a(href=data.link class="course-link-name-link")=data.name
-		a(href=data.link class="course-link-url")=data.link
+		//a(href=data.link class="course-link-url")=data.link
 		p(class="course-link-description")=data.description
 
 mixin adminCourseLinkBlock(data)
@@ -11,7 +11,7 @@ mixin adminCourseLinkBlock(data)
 	div(id=divId class="course-link")
 		h2(class="course-link-name")
 			a(href=data.link class="course-link-name-link")=data.name
-		a(href=data.link class="course-link-url")=data.link
+		//a(href=data.link class="course-link-url")=data.link
 		p(class="course-link-description")=data.description
 		
 		//- ex. 1-div-modify-buttons
@@ -33,13 +33,14 @@ if(view == 'guest' || view == 'student')
 else if(view == 'admin')
 
 	div(id="course-links-div")
-		h2(id="add-link-status" class="status-message")=addLinkStatus
-		
-		button(id="show-add-form-button") Add Link
+		div(id="course-links-add-button-div" class="add-content")
+			h3(id="add-link-status" class="status-message")=addLinkStatus
+			
+			button(id="show-add-form-button" class="add-button") Add Link
 		
 		div(id="course-links-add-form")
 			form(id="add-course-link-form" action="addlink-form" method="POST")
-				h1 Add a link
+				h2 Add a link
 				p Please fill out all fields
 				
 				label(id="add-link-name-label" class="add-form-label") 
@@ -66,6 +67,7 @@ else if(view == 'admin')
 	
 	script.
 		$(document).ready(function() {
+			
 			//-form hidden by default
 			$("#course-links-add-form").toggle();
 			
@@ -91,6 +93,8 @@ else if(view == 'admin')
 			
 			//-these two are to show and hide the add form
 			$("#show-add-form-button").click(function() {
+				tinymce.EditorManager.remove();
+			
 				$("#course-links-add-form").toggle();
 				
 				$("#show-add-form-button").toggle();
