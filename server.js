@@ -50,9 +50,8 @@ var cookie = require('cookie');
 var validator = require('validator');
 
 //define static directory
-//app.use('/static', express.static(__dirname + '/static'));
-console.log(dataPath);
-app.use('/x', express.static(dataPath));
+app.use('/static', express.static(__dirname + '/static'));
+app.use(express.static(dataPath));
 
 //home
 app.get('/', function(req, res, next) {
@@ -702,7 +701,8 @@ app.get('/Documents', function(req, res, next) {
 	var cookies = cookie.parse(req.headers.cookie || '');
 
 	var sql = "select Documents.id, Documents.date, Documents.assignment_name, \
-			   Documents.path, Documents.original_name, People.first_name, People.last_name \
+			   Documents.path, Documents.original_name, Documents.link_path, \
+			   People.first_name, People.last_name \
 			   from Documents join People on Documents.person = People.id \
 			   order by Documents.date desc;";
 	
@@ -736,18 +736,20 @@ app.post('/documents-upload', upload.single('file'), function(req, res, next) {
 	
 	var formData = req.body;
 	var file = req.file;
+	var link = "/uploads/" + cookies.id + "/" + file.originalname;
 	
 	db.serialize(function() {
-	//Documents(id, person, date, assignment_name, path, original_name)
-	db.run("insert into Documents values(?,?, datetime('now', 'localtime'),?,?,?)", 
-		[null, cookies.id, formData['assignment'], file.path, file.originalname],
+	//Documents(id, person, date, assignment_name, path, original_name, link_path)
+	db.run("insert into Documents values(?,?, datetime('now', 'localtime'),?,?,?,?)", 
+		[null, cookies.id, formData['assignment'], file.path, file.originalname, link],
 		function(err) {
 			if(err) { logErrors(err); }
 		}
 	);
 	
 	var sql = "select Documents.id, Documents.date, Documents.assignment_name, \
-			   Documents.path, Documents.original_name, People.first_name, People.last_name \
+			   Documents.path, Documents.original_name, Documents.link_path, \
+			   People.first_name, People.last_name \
 			   from Documents join People on Documents.person = People.id \
 			   order by Documents.date desc;";
 			   

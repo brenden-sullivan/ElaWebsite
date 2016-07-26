@@ -6,7 +6,7 @@ mixin uploadsRow(data)
 			td=data.last_name
 			td=data.assignment_name
 			td
-				-var link = "x/" + data.path
+				-var link = data.link_path
 				a(href=link target="_blank")=data.original_name
 			td=data.date
 

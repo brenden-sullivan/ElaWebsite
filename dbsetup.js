@@ -53,11 +53,11 @@ module.exports = {
 					//console.log(err);
 				});
 		
-		//Documents(id, person, date, assignment_name, path, original_name)
+		//Documents(id, person, date, assignment_name, path, original_name, link_path)
 		db.run("create table if not exists Documents (" +
 				"id integer primary key autoincrement," +
 				"person integer not null, date text not null, assignment_name varchar(50) default 'Unspecified'," +
-				"path varchar(100) not null, original_name varchar(100),"+
+				"path varchar(100) not null, original_name varchar(100), link_path varchar(100)," +
 				"foreign key(person) references People(id) on delete cascade on update cascade" +
 				");"
 				, [], function(err) {
@@ -143,7 +143,6 @@ module.exports = {
 			console.log(rows);
 		});
 		*/
-		
 	},
 	
 	clearStudentData: function(db, fs) {
