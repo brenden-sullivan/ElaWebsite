@@ -4,17 +4,23 @@ block page-content
 	h1(class="page-title") Home
 	
 	div(id="announcements-filter")
-		label(class="filter-label") Show announcements from: 
-		div(id="announcement-filter-selections")
-			button(id="all-announcement-filter-button" class="update-button" onclick="filterClicked(this)") Everyone
-			each val in posters
-				+announcementFilter(val)
+		fieldset
+			legend(class="filter-label") Announcements from
+			div(id="announcement-filter-selections")
+				button(id="all-announcement-filter-button" class="update-button" onclick="filterClicked(this)") Everyone
+				each val in posters
+					+announcementFilter(val)
 				
 	div(id="announcements-content")
 		include ./announcements.jade
 		
+
 		
 	script.
+		$(document).ready(function() {
+			$("#home-link").addClass("active");
+		});
+		
 		function filterClicked(button) {
 			var splitString = button.id.split("-");
 			var clickedId = splitString[0];

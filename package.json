@@ -13,6 +13,8 @@
 	"sqlite3": ">=3.0.0",
 	"body-parser": ">=1.14.0",
 	"multer": ">=1.1.0",
-	"validator": ">=0.1.0"
+	"rimraf": ">=2.5",
+	"validator": ">=0.1.0",
+	"node-csv": ">=0.1.0"
   }
 }

@@ -21,20 +21,21 @@ module.exports = {
 					//console.log(err);
 				});
 		
-		//Books(id, title, author_first, author_last, search_title, average_score)
+		//Books(id, title, author_first, author_last, pages)
 		//title is the input title typed
 		//searchtitle is all caps for search ease
 		db.run("create table if not exists Books (" + 
 				"id integer primary key autoincrement," +
 				"title varchar(100) not null, author_first varchar(50) not null," +
-				"author_last varchar(50) not null, search_title varchar(100) not null," + 
-				"constraint unique_book unique(search_title, author_first, author_last)" +
+				"author_last varchar(50) not null, pages integer," + 
+				"genre varchar(50)," +
+				"constraint unique_book unique(title, author_first, author_last)" +
 				");"
 				, [], function(err) {
 					//console.log(err);
 				});
 			
-		//Reviews(id, writer, book, text, score, date)
+		//Reviews(id, writer, book, score, date, text)
 		//when inserting date, use SELECT date('now')
 		//ex. insert into Reviews values(writerid, bookid, text, score, select date('now'));
 		//default value on writer is for if a user is removed - still want review and score,
@@ -42,9 +43,9 @@ module.exports = {
 		db.run("create table if not exists Reviews (" +
 				"id integer primary key autoincrement," +
 				"writer integer default -1 not null, book integer not null," +
-				"text varchar(255)," + 
-				"score integer not null check(score >= 1 and score <= 5)," +
+				"score integer not null check(score >= 1 and score <= 10)," +
 				"date text not null," +
+				"text varchar(255) not null," +
 				"foreign key(writer) references People(id) on update cascade on delete set default," +
 				"foreign key(book) references Books(id) on update cascade on delete cascade," +
 				"constraint unique_review unique(writer, book)" +
@@ -108,11 +109,10 @@ module.exports = {
 			[], function(err) {
 			//console.log(err);
 		});
-		
 		db.all("select * from AdminConfig;" , [], function(err, rows) {
 			//console.log("People");
 			//console.log(err);
-			//console.log(rows);
+			console.log(rows);
 		});
 		db.all("select * from Announcements;" , [], function(err, rows) {
 			//console.log("Links");
@@ -137,26 +137,69 @@ module.exports = {
 			console.log(err);
 			console.log(rows);
 		});
-		db.all("select * from Documents", [], function(err, rows) {
+		db.all("select * from Books", [], function(err, rows) {
 			//console.log("Links");
-			//console.log(err);
+			console.log(err);
+			console.log(rows);
+		});
+		
+		db.all("select * from Reviews", [], function(err, rows) {
+			//console.log("Links");
+			console.log(err);
 			console.log(rows);
 		});
 		*/
-	},
-	
-	clearStudentData: function(db, fs) {
-		db.run("delete from People where permission != 'admin';");
-		db.run("delete from Documents");
-		db.run("delete from Announcements");
 		
-		/********************
-		* TODO: remove files from filesystem
-		*/
 	},
 	
-	rebuild: function(db) {
+	//used to start new year with new students
+	/*******
+	* TODO: Test this
+	*/
+	clearStudentData: function(db, rimraf, dataPath) {
+		
+		//for each person who is not an admin, delete folder with their documents (if they have any)
+		db.each("select id from People where permission != 'admin'", function(err, row) {
+			if(err) { console.log(err); }
+			
+			else {
+				db.serialize(function() {
+				db.all("select id from Documents where Documents.person = ?", [row.id], function(err, rows) {
+					if(err) { console.log(err); }
+					
+					//if this person has any Documents
+					if(rows.length > 0) {
+						//delete that users documents folder
+						rimraf(dataPath + 'uploads' + row.id, function(err) {
+							if(err) { console.log(err); }
+						});
+					}
+				});
+				
+				db.run("delete from Documents where Documents.person = ?", [row.id], function(err) {
+					if(err) { console.log(err); }
+				});
+				
+				}); //end db.serialize
+			}
+		});
+		
+		//delete entries from user tables
+		db.run("delete from People where permission != 'admin';");
+		db.run("delete from Announcements");
+	},
+	
+	//remove all tables and re-add them
+	rebuild: function(db, rimraf, dataPath) {
 		db.serialize(function() {
+		
+		try {
+			rimraf(dataPath + 'uploads', function(err) {
+				if(err) { console.log(err); }
+			});
+		} catch(e) {
+			console.log(e);
+		}
 		
 		//drop all tables and re-create them
 		db.each("select * from sqlite_master where type='table';", function(err, row) {
@@ -180,6 +223,13 @@ module.exports = {
 		
 		db.run("insert into People values(null, 'Webmaster', 'eb0a191797624dd3a48fa681d3061212', \
 			    'Web', 'Master', '', 'admin');", function(err) {
+			
+			if(err) { console.log(err); }
+		});
+		
+		//enter Anonymous as a person to make reviews work correctly
+		db.run("insert into People values(-1, 'Anonymous', 'eb0a191797624dd3a48fa681d3061212', \
+			    'Anonymous', 'User', '', 'student');", function(err) {
 			
 			if(err) { console.log(err); }
 		});

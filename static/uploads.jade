@@ -12,8 +12,19 @@ mixin uploadsRow(data)
 
 
 mixin adminUploadsRow(data)
-	+uploadsRow(data)
-	//-TODO: add delete button for admins
+	div(class="uploads-row-div")
+		-var docId = data.id + "-table-row"
+		tr(id=docId)
+			td=data.first_name
+			td=data.last_name
+			td=data.assignment_name
+			td
+				-var link = data.link_path
+				a(href=link target="_blank")=data.original_name
+			td=data.date
+			td
+				-var deleteButtonId = data.id + "-delete-button"
+				button(id=deleteButtonId class="delete-button" onclick="deleteClicked(this)") Delete
 	
 mixin uploadForm
 	div(id="document-upload-form-div")
@@ -24,14 +35,16 @@ mixin uploadForm
 		
 			label(class="add-form-label")
 				strong Upload Document:
-			input(id="add-assignment-doc-input" name="doc-doc" type="file" required)
+			input(id="add-assignment-doc-input" class="choice-button" name="doc-doc" type="file" required)
 			
-			input(id="add-doc-submit" class="input-button" type="submit" value="Submit")
-			
-			button(id="hide-add-form-button") Cancel
+			br
+			input(id="add-doc-submit" class="input-button submit-button" type="submit" value="Submit")
+			button(id="hide-add-form-button" class="cancel-button") Cancel
 
 	script.
 		$(document).ready(function() {
+		
+			$("#uploads-table").tablesorter();
 			
 			//-form hidden by default
 			$("#document-upload-form-div").toggle();
@@ -62,6 +75,9 @@ mixin uploadForm
 					
 					success: function(data) {
 						$("#documents-content").html(data);
+						$("#uploads-table").trigger("update");
+						var sorting = [4,1];
+						$("#uploads-table").trigger("sorton", [sorting]);
 					}
 				
 				});
@@ -88,6 +104,32 @@ mixin uploadForm
 				return false;
 			});
 		}); //end document.ready
+		
+		//called when a delete button is clicked
+		function deleteClicked(button) {
+			var splitString = button.id.split("-");
+			var clickedId = splitString[0];
+			
+			var confirm = window.confirm("Are you sure you want to delete this submission?");
+			
+			if(confirm == true) {
+				$.ajax({
+					url: "/Documents/" + clickedId,
+					type: "DELETE",
+					dataType: "html",
+					
+					success: function(data) {
+						$("#documents-content").html(data);
+						$("#uploads-table").trigger("update");
+						var sorting = [4,1];
+						$("#uploads-table").trigger("sorton", [sorting]);
+					}
+				
+				});
+			}
+				
+			return false;
+		}
 
 if(view == 'student' || view == 'admin')
 	div(id="uploads-div")
@@ -99,31 +141,37 @@ if(view == 'student' || view == 'admin')
 		+uploadForm
 			
 		div(id="uploads-table-div")
-			table(id="uploads-table")
-				tr(class="table-header")
-					th First
-					th Last
-					th Assignment
-					th Preview
-					th Date Uploaded
-					
-				each val in uploads
-					if(view == 'student')
-						+uploadsRow(val)
-					else if(view == 'admin')
-						+adminUploadsRow(val)
+			table(id="uploads-table" class)
+				thead
+					tr(class="table-header")
+						th First
+						th Last
+						th Assignment
+						th Preview
+						th Date Uploaded
+						if(view == 'admin')
+							th Remove
+				
+				tbody
+					each val in uploads
+						if(view == 'student')
+							+uploadsRow(val)
+						else if(view == 'admin')
+							+adminUploadsRow(val)
 										
 else if(view == 'guest')
 	div(id="uploads-div")
 
 		div(id="uploads-table-div")
 			table(id="uploads-table")
-				tr(class="table-header")
-					th First
-					th Last
-					th Assignment
-					th Preview
-					th Date Uploaded
-					
+				thead
+					tr(class="table-header")
+						th First
+						th Last
+						th Assignment
+						th Preview
+						th Date Uploaded
+				
+				tbody
 				each val in uploads
 					+uploadsRow(val)

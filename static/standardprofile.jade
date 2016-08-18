@@ -1,0 +1,29 @@
+div(id="account-content-div")
+
+	div(id="change-password-div")
+		form(id="change-pass-form" action="/change-password" method="POST")
+			fieldset(id="change-pass-fieldset")
+				legend Change Password
+				
+				h3(class="status-message")=changePassStatus
+				
+				div(id="change-pass-inputs")
+					label(class="form-label")
+						strong Current Password
+					input(id="password" type="password" name="orig-pass" size="30" placeholder="Current Password" required)
+					
+					br
+					label(class="form-label")
+						strong New Password
+					input(id="password-new" type="password" name="new-pass" size="30" placeholder="New Password" required)
+					
+					br
+					label(class="form-label")
+						strong Confirm Password
+					input(id="password-confirm" type="password" name="confirm-pass" size="30" placeholder="Confirm Password" required)
+					
+					br
+					input(type="submit" class="input-button submit-button" value="Submit")
+					
+					
+					

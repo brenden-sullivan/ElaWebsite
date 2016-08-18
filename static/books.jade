@@ -1,0 +1,159 @@
+mixin booksRow(data)
+	div(books-row-div)
+		-var bookId = data.id
+		-var rowId = data.id + "-table-row";
+		tr(id=rowId)
+			td=data.title
+			td=data.author_first
+			td=data.author_last
+			td=data.genre
+			td=data.average
+			td
+				-var link = "/Books/" + bookId
+				a(href=link) Reviews
+
+div(id="books-content-div")
+	//-have add review form and related scripts only for admin and student
+	if(view == 'admin' || view == 'student')
+		div(id="review-add-button-div" class="add-content")
+			h3(id="add-review-status" class="status-message")=addReviewStatus
+			button(id="show-add-form-button" class="add-button") Add Review
+			
+		div(id="add-review-form-div")
+			form(id="add-review-form" action="/add-review" method="POST" novalidate)
+				label(id="add-review-title-label" class="add-form-label")
+					strong Title	
+				input(id="add-announcement-title" type="text" name="book-title" size="30" placeholder="Title" value=bookTitle required)
+			
+				label(id="add-review-author-label" class="add-form-label")
+					strong Author	
+				input(id="add-review-first" type="text" name="author-first" size="30" placeholder="First Name" value=bookAuthorFirst required)
+				input(id="add-review-last" type="text" name="author-last" size="30" placeholder="Last Name" value=bookAuthorLast required)
+				
+				label(id="add-review-genre-label" class="add-form-label")
+					strong Genre
+				input(id="add-review-genre" type="text" name="book-genre" size="30" placeholder="Genre" value=bookGenre required)
+				
+				label(id="add-review-pages-label" class="add-form-label")
+					strong Pages
+				input(id="add-review-pages" type="text" name="book-pages" size="30" placeholder="# Pages" value=bookPages required)
+				
+				label(id="add-review-score-label" class="add-form-label")
+					strong Score
+				select(id="add-review-score" name="review-score" required)
+					option(value="") -
+					option(value="1") 1
+					option(value="2") 2
+					option(value="3") 3
+					option(value="4") 4
+					option(value="5") 5
+					option(value="6") 6
+					option(value="7") 7
+					option(value="8") 8
+					option(value="9") 9
+					option(value="10") 10
+				
+				label(id="add-review-content-label" class="add-form-label")
+					strong Review (Please fill out the document)	
+				textarea(id="review-text" name="review-content" cols="100" rows="10" placeholder="Review" value=announcementContent required)
+				
+				input(id="add-review-submit" class="input-button submit-button" type="submit" value="Submit")
+				button(id="hide-add-form-button" class="cancel-button") Cancel
+
+	//-part of page that everyone sees (table)
+	div(id="books-table-div")
+		table(id="books-table")
+			caption Book Reviews
+			thead
+				tr(class="table-header")
+					th Book
+					th Author (First)
+					th Author (Last)
+					th Genre
+					th Score
+					th Reviews
+			
+			tbody
+				each val in books
+					+booksRow(val)
+					
+	script.
+		
+		$(document).ready(function() {
+			if($("tbody").find("tr").length > 0) {
+				$("#books-table").tablesorter({
+					sortList: [[3,1]]
+				});
+			}
+			
+			$("#review-text").on('load', function() {
+				tinymce.execCommand('mceAddControl', false, 'review-text');
+			});
+			
+			//-form hidden by default
+			$("#add-review-form-div").toggle();
+			
+			//-add form submit as ajax call
+			$("#add-review-form").submit(function(e) {
+				e.preventDefault();
+			
+				var inputs = $("#add-review-form :input");
+				
+				$.ajax({
+					url: "/add-review",
+					type: "POST",
+					dataType: "html",
+					
+					data: inputs,
+					
+					success: function(data) {
+						$("#books-content").html(data);
+						location.reload(true);
+						
+						$("#books-table").trigger("update");
+						var sorting = [3,1];
+						$("#books-table").trigger("sorton", [sorting]);
+					},
+					
+					//re-add rich text area to form
+					complete: function() {
+						tinymce.execCommand('mceAddControl', false, 'review-text');
+					}
+				
+				});
+			});
+			
+			//-these two are to show and hide the add form
+			$("#show-add-form-button").click(function() {
+				$("#add-review-form-div").toggle();
+				
+				$("#show-add-form-button").toggle();
+			
+				return false;
+			});
+			
+			$("#hide-add-form-button").click(function() {
+				$("#add-review-form-div").toggle();
+				
+				$("#show-add-form-button").toggle();
+				
+				return false;
+			});
+			
+			return false;
+		}); //end document.ready
+		
+		//tinymce init callback
+		function load_form_contents(editor) {
+			$.ajax({
+				url: "/static/forms/BookReviewForm.html",
+				dataType: "html",
+				
+				success: function(data) {
+					editor.setContent("<span>" + data + "</span>");
+				}
+			
+			});
+		}
+
+	

@@ -1,20 +1,26 @@
 mixin announcementBlock(data)
 	div(class="announcement-div")
-		h2(class="announcement-title")=data.title
 		
-		//-Displays as rendered html
-		-var htmlContent = data.content
-		p(class="announcement-content") !{htmlContent}
+		div("announcement-main-div")
+			h2(class="announcement-title")=data.title
+			
+			//-Displays as rendered html
+			-var htmlContent = data.content
+			p(class="announcement-content") !{htmlContent}
+			
+		if(view == 'admin')
+			div(class="modify-buttons")
+				-var deleteButtonId = data.id + "-delete-button"
+				button(id=deleteButtonId class="delete-button" onclick="deleteClicked(this)") Delete
+			
+	div(class="announcement-footer-div")
+		-var announcementLabel = "Posted on " + data.date + " by " + data.first_name + " " + data.last_name
+		label(class="announcement-date-label")=announcementLabel
 		
-		-var dateLabel = "Posted On " + data.date + " by " + data.first_name + " " + data.last_name
-		label(class="date-label")=dateLabel
 		
 mixin adminAnnouncementBlock(data)
 		+announcementBlock(data)
 		
-		div(class="modify-buttons")
-			-var deleteButtonId = data.id + "-delete-button"
-			button(id=deleteButtonId class="delete-button" onclick="deleteClicked(this)") Delete
 		
 if(view == 'student' || view == 'guest')
 	div(id="announcements-div")
@@ -26,11 +32,11 @@ else if(view == 'admin')
 		div(id="announcements-add-button-div" class="add-content")
 			h3(id="add-announcement-status" class="status-message")=addAnnouncementStatus
 			
-			button(id="show-add-form-button" class="add-button") Make Announcement
+			button(id="show-add-form-button" class="add-button add-announcement") Make Announcement
 		
 		div(id="add-announcement-form")
 			form(id="add-course-link-form" action="/add-announcement" method="POST" novalidate)
-				label(id="add-announcement-content-label" class="add-form-label")
+				label(id="add-announcement-title-label" class="add-form-label")
 					strong Title
 					
 				input(id="add-announcement-title" type="text" name="announcement-title" size="30" placeholder="Title" value=announcementTitle required)
@@ -40,37 +46,21 @@ else if(view == 'admin')
 					
 				textarea(id="add-announcement-content" name="announcement-content" cols="100" rows="10" placeholder="Announcement" value=announcementContent required)
 				
-				input(id="add-announcement-submit" class="input-button" type="submit" value="Submit")
+				input(id="add-announcement-submit" class="input-button submit-button" type="submit" value="Submit")
 				
-				button(id="hide-add-form-button") Cancel
+				button(id="hide-add-form-button" class="cancel-button") Cancel
 					
 		
 		each val in announcements
 			+adminAnnouncementBlock(val)
 	
 	script.
-		$("#add-announcement-content").load(function() {
+		$("#add-announcement-content").on('load', function() {
 			tinymce.execCommand('mceAddControl', false, 'add-announcement-content');
 		});
 		
 		$(document).ready(function() {
 		
-			tinymce.init({
-			  selector: 'textarea',
-			  mode: "none",
-			  height: 300,
-			  plugins: [
-				'advlist autolink lists link image charmap print preview anchor',
-				'searchreplace visualblocks code fullscreen',
-				'insertdatetime media table contextmenu paste code'
-			  ],
-			  toolbar: 'insertfile undo redo | styleselect | fontsizeselect | bold italic underline | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image',
-			  content_css: [
-				'//fast.fonts.net/cssapi/e6dc9b99-64fe-4292-ad98-6974f93cd2a2.css',
-				'//www.tinymce.com/css/codepen.min.css'
-			  ],
-			  fontsize_formats: '8pt 10pt 12pt 14pt 18pt 24pt 36pt'
-			});
 		
 			//-form hidden by default
 			$("#add-announcement-form").toggle();
@@ -148,4 +138,9 @@ else if(view == 'admin')
 			}
 				
 			return false;
+		}
+		
+		//tinymce init callback (do nothing)
+		function load_form_contents(editor) {
+			//Do nothing
 		}

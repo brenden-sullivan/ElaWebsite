@@ -1,16 +1,68 @@
-
-div(id="admin-submit-sql-div")
-	h2(class="admin-toolbar-title") Submit SQL Operation
-	h3(class="status-message")=sqlStatus
-	form(id="db-submit-sql-form" action="/database/sql" method="POST")
-		input(type="text" name="sql-command" size="100" placeholder="SQL Command")
-		input(type="submit" class="input-button" value="Submit")
-
-div(id="admin-db-rebuild-div")
-	form(id="db-rebuild-form" action="/database/rebuild" method="POST" onsubmit="return confirm('Are you sure you want to rebuild the database?');")
-		input(type="submit" class="input-button" value="Rebuild DB")
+div(id="admin-toolbar-div")
+	h1 Admin Tools
 	
-div(id="admin-db-clear-div")
-	h3(class="status-message")=clearStudentStatus
-	form(id="db-clear-form" action="/database/clear-students" method="POST" onsubmit="return confirm('Are you sure you want to delete all student data?');")
-		input(type="submit" class="input-button" value="Clear Student Data")
+	div(id="admin-change-admin-key")
+		form(id="change-admin-key-form" action="/change-admin-key" method="POST")
+			fieldset(id="change-admin-key-fieldset")
+				legend Change Admin Key
+				
+				h3(class="status-message")=changeAdminKeyStatus
+	
+				div(id="change-admin-key-inputs")
+					label(class="form-label")
+						strong Current Admin Key
+					input(id="key" type="text" name="orig-key" size="30" placeholder="Current Key" required)
+					
+					br
+					label(class="form-label")
+						strong New Key
+					input(id="key-new" type="text" name="new-key" size="30" placeholder="New Key" required)
+					
+					br
+					label(class="form-label")
+						strong Confirm Key
+					input(id="key-confirm" type="text" name="confirm-key" size="30" placeholder="Confirm Key" required)
+					
+					br
+					input(type="submit" class="input-button submit-button" value="Submit")
+					
+	div(id="admin-change-student-key")
+		form(id="change-student-key-form" action="/change-student-key" method="POST")
+			fieldset(id="change-student-key-fieldset")
+				legend Change Student Key
+				
+				h3(class="status-message")=changeStudentKeyStatus
+	
+				div(id="change-student-key-inputs")
+					label(class="form-label")
+						strong Current Student Key
+					input(id="key" type="text" name="orig-key" size="30" placeholder="Current Key" required)
+					
+					br
+					label(class="form-label")
+						strong New Key
+					input(id="key-new" type="text" name="new-key" size="30" placeholder="New Key" required)
+					
+					br
+					label(class="form-label")
+						strong Confirm Key
+					input(id="key-confirm" type="text" name="confirm-key" size="30" placeholder="Confirm Key" required)
+					
+					br
+					input(type="submit" class="input-button submit-button" value="Submit")
+	
+	div(id="admin-submit-sql-div")
+		h2(class="admin-toolbar-title") Submit SQL Operation
+		h3(class="status-message")=sqlStatus
+		form(id="db-submit-sql-form" action="/database/sql" method="POST")
+			input(type="text" name="sql-command" size="50" placeholder="SQL Command")
+			input(type="submit" class="input-button submit-button" value="Submit")
+
+	div(id="admin-db-rebuild-div")
+		form(id="db-rebuild-form" action="/database/rebuild" method="POST" onsubmit="return confirm('Are you sure you want to rebuild the database?');")
+			input(type="submit" class="input-button orange-button" value="Rebuild DB")
+		
+	div(id="admin-db-clear-div")
+		h3(class="status-message")=clearStudentStatus
+		form(id="db-clear-form" action="/database/clear-students" method="POST" onsubmit="return confirm('Are you sure you want to delete all student data?');")
+			input(type="submit" class="input-button orange-button" value="Clear Student Data")

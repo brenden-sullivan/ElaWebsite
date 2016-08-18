@@ -1,0 +1,150 @@
+mixin reviewsRow(data)
+	div(reviews-row-div)
+		-var reviewId = data.rid
+		-var rowId = reviewId + "-table-row";
+		tr(id=rowId)
+			td=data.p_first
+			td=data.p_last
+			td=data.score
+			td=data.date
+			td
+				-var link = "/Reviews/" + reviewId
+				a(href=link target="_blank") View
+
+div(id="reviews-content-div")
+
+	div("book-info-div")
+		h2=author
+		p=genre
+		-var pageString = pages + " pages"
+		p=pageString
+			
+	//-have add review form and related scripts only for admin and student
+	if(view == 'admin' || view == 'student')
+		div(id="add-review-div")
+			h3(id="add-review-status" class="status-message")=addReviewStatus
+		
+			div(id="review-add-button-div" class="add-content add-review")
+				button(id="show-add-form-button" class="add-button") Add Review
+				
+			div(id="add-review-form-div")
+				form(id="add-review-form" action="/add-review" method="POST" novalidate)
+					-var title = bookTitle
+					input(id="add-announcement-title" type="hidden" name="book-title" value=title required)
+					
+					label(id="add-review-score-label" class="add-form-label")
+						strong Score
+					select(id="add-review-score" name="review-score" required)
+						option(value="") -
+						option(value="1") 1
+						option(value="2") 2
+						option(value="3") 3
+						option(value="4") 4
+						option(value="5") 5
+						option(value="6") 6
+						option(value="7") 7
+						option(value="8") 8
+						option(value="9") 9
+						option(value="10") 10
+					
+					label(id="add-review-content-label" class="add-form-label")
+						strong Review (Please fill out the document)	
+					textarea(id="review-text" name="review-content" cols="100" rows="10" placeholder="Review" value=announcementContent required)
+					
+					input(id="add-review-submit" class="input-button" type="submit" value="Submit")
+					button(id="hide-add-form-button") Cancel
+	
+	//-everyone see book info		
+	div(id="reviews-table-div")
+		table(id="reviews-table")
+			caption Reviews of this Book
+			thead
+				tr(class="table-header")
+					th First Name
+					th Last Name
+					th Score
+					th Date
+					th Expand
+			
+			tbody
+				each val in reviews
+					+reviewsRow(val)
+				
+	script.
+		
+		$(document).ready(function() {
+			if($("tbody").find("tr").length > 0) {
+				$("#reviews-table").tablesorter({
+					sortList: [[3,1]]
+				});
+			}
+			
+			$("#review-text").on('load', function() {
+				tinymce.execCommand('mceAddControl', false, 'review-text');
+			});
+			
+			//-form hidden by default
+			$("#add-review-form-div").toggle();
+			
+			//-add form submit as ajax call
+			$("#add-review-form").submit(function(e) {
+				e.preventDefault();
+			
+				var inputs = $("#add-review-form :input");
+				
+				$.ajax({
+					url: "/add-review-existing",
+					type: "POST",
+					dataType: "html",
+					
+					data: inputs,
+					
+					success: function(data) {
+						$("#bookinfo-content").html(data);
+						location.reload(true);
+						
+						$("#reviews-table").trigger("update");
+						var sorting = [3,1];
+						$("#reviews-table").trigger("sorton", [sorting]);
+					},
+					
+					//re-add rich text area to form
+					complete: function() {
+						tinymce.execCommand('mceAddControl', false, 'review-text');
+					}
+				
+				});
+			});
+			
+			//-these two are to show and hide the add form
+			$("#show-add-form-button").click(function() {
+				$("#add-review-form-div").toggle();
+				
+				$("#show-add-form-button").toggle();
+			
+				return false;
+			});
+			
+			$("#hide-add-form-button").click(function() {
+				$("#add-review-form-div").toggle();
+				
+				$("#show-add-form-button").toggle();
+				
+				return false;
+			});
+			
+			return false;
+		}); //end document.ready
+		
+		//tinymce init callback
+		function load_form_contents(editor) {
+			$.ajax({
+				url: "/static/forms/BookReviewForm.html",
+				dataType: "html",
+				
+				success: function(data) {
+					editor.setContent("<span>" + data + "</span>");
+				}
+			
+			});
+		}

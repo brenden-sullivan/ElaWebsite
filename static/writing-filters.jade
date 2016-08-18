@@ -1,0 +1,46 @@
+div(id="document-filters-div")
+	form(id="document-filters-form")
+		fieldset
+			legend Search
+			
+			label(class="filters-label")
+				strong First Name
+			input(id="doc-filters-first" name="first-name" type="text" size="30" placeholder="First Name")
+			
+			br
+			label(class="filters-label")
+				strong Last Name
+			input(id="doc-filters-last" name="last-name" type="text" size="30" placeholder="Last Name")
+			
+			br
+			label(class="filters-label")
+				strong Assignment
+			input(id="doc-filters-assign" name="assignment-name" type="text" size="30" placeholder="Assignment")
+			
+			br
+			input(id="doc-filters-submit" class="input-button search-button" type="submit" value="Search")
+		
+	script.
+		$(document).ready(function() {
+		
+			//-add form submit as ajax call
+			$("#document-filters-form").submit(function(e) {
+				e.preventDefault();
+			
+				var inputs = $("#document-filters-form :input");
+				
+				$.ajax({
+					url: "/Documents/filter",
+					type: "POST",
+					dataType: "html",
+					
+					data: inputs,
+					
+					success: function(data) {
+						$("#documents-content").html(data);
+					}
+				
+				});
+			});
+		
+		}); //end document.ready

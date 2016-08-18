@@ -2,7 +2,7 @@ mixin courseLinkBlock(data)
 	div(class="course-link")
 		h2(class="course-link-name")
 			a(href=data.link class="course-link-name-link")=data.name
-		//a(href=data.link class="course-link-url")=data.link
+		//a(href=data.link class="course-link-url" style="display:none")=data.link
 		p(class="course-link-description")=data.description
 
 mixin adminCourseLinkBlock(data)
@@ -11,7 +11,7 @@ mixin adminCourseLinkBlock(data)
 	div(id=divId class="course-link")
 		h2(class="course-link-name")
 			a(href=data.link class="course-link-name-link")=data.name
-		//a(href=data.link class="course-link-url")=data.link
+		//a(href=data.link class="course-link-url" style="display:none")=data.link
 		p(class="course-link-description")=data.description
 		
 		//- ex. 1-div-modify-buttons
@@ -56,11 +56,12 @@ else if(view == 'admin')
 				label(id="add-link-description-label" class="add-form-label")
 					strong Description
 					
-				textarea(id="add-link-desc" name="link-desc" cols="100" rows="10" placeholder="Description" value=linkDescValue)
+				textarea(id="add-link-desc" name="link-desc" cols="50" rows="10" placeholder="Description" value=linkDescValue)
 				
-				input(id="add-link-submit" class="input-button" type="submit" value="Submit")
+				br
+				input(id="add-link-submit" class="input-button submit-button" type="submit" value="Submit")
 				
-				button(id="hide-add-form-button") Cancel
+				button(id="hide-add-form-button" class="cancel-button") Cancel
 		
 		each val in links
 			+adminCourseLinkBlock(val)
@@ -149,7 +150,7 @@ else if(view == 'admin')
 			var updateDiv = $(divId);
 			
 			//get the values for all the fields we need
-			var name = updateDiv.find("h1").find("a").html();
+			var name = updateDiv.find("h2").find("a").html();
 			var url = updateDiv.find("a").attr("href");
 			var desc = updateDiv.find("p").html();
 			
@@ -163,8 +164,9 @@ else if(view == 'admin')
 				<br/> \
 				<input type="url" name="update-link-url" size="30" value="' + url + '"> \
 				<textarea name="update-link-desc" cols="100" rows="10">' + desc + '</textarea> \
-				<button id="' + clickedId + '-submit-link-update" class="input-button submit-update-button" onclick="submitUpdate(this)">Submit</button> \
-				<button id="' + clickedId + '-hide-link-update-button" class="cancel-update-button input-button" onclick="cancelUpdate(this)">Cancel</button> \
+				<br/> \
+				<button id="' + clickedId + '-submit-link-update" class="input-button submit-button" onclick="submitUpdate(this)">Submit</button> \
+				<button id="' + clickedId + '-hide-link-update-button" class="cancel-button input-button" onclick="cancelUpdate(this)">Cancel</button> \
 				';
 				
 			updateDiv.html(formHtml);
@@ -236,7 +238,7 @@ else if(view == 'admin')
 			
 			$(divId).html(linkHtml);
 			
-			//$(divId + "-modify-buttons").toggle();
+			location.reload(true);
 			
 			return false;
 		}

@@ -5,7 +5,7 @@ html
 		title=titleString
 		
 		//-CSS
-		link(href="style.css" type="text/css" rel="stylesheet")
+		link(href="/static/style.css" type="text/css" rel="stylesheet")
 		
 		//include jquery
 		script(src='http://code.jquery.com/jquery-1.11.1.js')
@@ -14,65 +14,66 @@ html
 		script(type="text/javascript" src="http://cryptojs.altervista.org/api/functions_cryptography.js")
 		
 	body
-		div(id="signup-form-div")
-			h1 Create Account
-			
-			form(id="signup-form" action="/signup" method="POST")
-				fieldset(id="signup-form-fieldset")
+		div(id="wrap")
+			div(id="signup-form-div")
+				h1 Create Account
 				
-					p * indicates required field
+				form(id="signup-form" action="/signup" method="POST")
+					fieldset(id="signup-form-fieldset")
 					
-					div(id="signup-form-account")
+						p * indicates required field
 						
-						label(id="username-label" class="signup-form-label")
-							strong Choose a username *
-					
-						input(id="username-form" type="text" name="username-form" size="30" placeholder="Username" value=usernameValue required)
-						
-						br
-						label(id="password-label" class="signup-form-label")
-							strong Create password *
-						input(id="password-form" type="password" name="password-form" size="30" placeholder="Password" required)
-						
-						br
-						label(id="password-confirm-label" class="signup-form-label")
-							strong Confirm password *
-						input(id="password-confirm-form" type="password" name="password-confirm-form" size="30" placeholder="Password Confirm" required)
-						
-						p(id="account-status" class="status-message")=accountStatus 
-						
-					div(id="signup-form-name")
-					
-						label(id="name-label" class="signup-form-label")
-							strong Name *
+						div(id="signup-form-account")
 							
-						input(id="first-name" type="text" name="first-name" size="30" placeholder="First" value=firstValue required)
-						input(id="last-name" type="text" name="last-name" size="30" placeholder="Last" value=lastValue required)
+							label(id="username-label" class="signup-form-label")
+								strong Choose a username *
 						
-						p(id="name-status" class="status-message")=nameStatus
-						
-					div("id=signup-form-info")
-					
-						label(id="name-label" class="signup-form-label")
-							strong Contact
+							input(id="username-form" type="text" name="username-form" size="30" placeholder="Username" value=usernameValue required)
 							
-						input(id="email-input" type="text" name="email-input" size="50" placeholder="Email" value=emailValue)
-		
-					div(id="signup-form-key")
-						
-						label(id="access-code-label" class="signup-form-label")
-							strong Access Code *
+							br
+							label(id="password-label" class="signup-form-label")
+								strong Create password *
+							input(id="password-form" type="password" name="password-form" size="30" placeholder="Password" required)
 							
-						input(id="access-code-input" type="text" name="access-code-input" size="30" placeholder="Access Code" value=accessCodeValue required)
+							br
+							label(id="password-confirm-label" class="signup-form-label")
+								strong Confirm password *
+							input(id="password-confirm-form" type="password" name="password-confirm-form" size="30" placeholder="Password Confirm" required)
+							
+							p(id="account-status" class="status-message")=accountStatus 
+							
+						div(id="signup-form-name")
 						
-						p(id="access-code-status" class="status-message")=accessCodeStatus
-					
-					input(id="signup-form-submit" class="input-button" type="submit" value="Submit")
-					
-					p(id="form-status" class="status-message")=formStatus
-		
-		div(id="content")
-			a(href="/") Back
+							label(id="name-label" class="signup-form-label")
+								strong Name *
+								
+							input(id="first-name" type="text" name="first-name" size="30" placeholder="First" value=firstValue required)
+							input(id="last-name" type="text" name="last-name" size="30" placeholder="Last" value=lastValue required)
+							
+							p(id="name-status" class="status-message")=nameStatus
+							
+						div("id=signup-form-info")
+						
+							label(id="name-label" class="signup-form-label")
+								strong Contact
+								
+							input(id="email-input" type="text" name="email-input" size="50" placeholder="Email" value=emailValue)
+			
+						div(id="signup-form-key")
+							
+							label(id="access-code-label" class="signup-form-label")
+								strong Access Code *
+								
+							input(id="access-code-input" type="text" name="access-code-input" size="30" placeholder="Access Code" value=accessCodeValue required)
+							
+							p(id="access-code-status" class="status-message")=accessCodeStatus
+						
+						input(id="signup-form-submit" class="input-button submit-button" type="submit" value="Submit")
+						
+						p(id="form-status" class="status-message")=formStatus
+			
+			div(id="content")
+				a(href="/") Back
 			
 			
 			

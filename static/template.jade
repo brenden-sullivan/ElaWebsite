@@ -3,10 +3,11 @@ html
 	include ./head.jade
 		
 	body
-		include ./header.jade
-		
-		div(id="main-content")
-			block page-content
-				p Loading...
+		div(id="wrap")
+			include ./header.jade
+			
+			div(id="main-content")
+				block page-content
+					p Loading...
 				
 	block scripts

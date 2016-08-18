@@ -1,0 +1,63 @@
+div(id="book-filters-div")
+	form(id="book-filters-form")
+		fieldset
+			legend Search
+			
+			label(class="filters-label")
+				strong Title
+			input(id="book-filters-title" name="book-title" type="text" size="30" placeholder="Title")
+			
+			br
+			label(class="filters-label")
+				strong Author
+			input(id="book-filters-first" name="first-name" type="text" size="30" placeholder="First Name")
+			input(id="book-filters-last" name="last-name" type="text" size="30" placeholder="Last Name")
+			
+			br
+			label(class="filters-label")
+				strong Genre
+			input(id="book-filters-genre" name="genre" type="text" size="30" placeholder="Genre")
+			
+			br
+			label(class="filters-label")
+				strong Score
+			select(id="score-filter" name="review-score")
+					option(value="") -
+					option(value="1") 1
+					option(value="2") 2
+					option(value="3") 3
+					option(value="4") 4
+					option(value="5") 5
+					option(value="6") 6
+					option(value="7") 7
+					option(value="8") 8
+					option(value="9") 9
+					option(value="10") 10
+					
+			br
+			input(id="book-filters-submit" class="input-button search-button" type="submit" value="Search")
+		
+	script.
+		$(document).ready(function() {
+		
+			//-add form submit as ajax call
+			$("#book-filters-form").submit(function(e) {
+				e.preventDefault();
+			
+				var inputs = $("#book-filters-form :input");
+				
+				$.ajax({
+					url: "/Books/filter",
+					type: "POST",
+					dataType: "html",
+					
+					data: inputs,
+					
+					success: function(data) {
+						$("#books-content").html(data);
+					}
+				
+				});
+			});
+		
+		}); //end document.ready

@@ -3,6 +3,7 @@ var app = express();
 var template = require('jade');
 var http = require('http').Server(app);
 var fs = require('fs');
+var rimraf = require('rimraf');
 
 //sqlite3
 var sqlite3 = require('sqlite3').verbose();
@@ -69,7 +70,7 @@ app.get('/', function(req, res, next) {
 				
 			res.send(html);
 		} catch (e) {
-			next(e);
+			 //next(e);
 		}
 	}
 	
@@ -106,7 +107,7 @@ app.get('/', function(req, res, next) {
 					res.send(html);
 			
 				} catch(e) {
-					next(e);
+					 //next(e);
 				}
 				
 			});
@@ -143,7 +144,7 @@ app.post('/login', function(req, res, next) {
 					
 				res.send(html);
 			} catch (e) {
-				next(e);
+				 //next(e);
 			}
 		}
 		
@@ -160,7 +161,7 @@ app.post('/login', function(req, res, next) {
 					
 				res.send(html);
 			} catch (e) {
-				next(e);
+				 //next(e);
 			}
 		}
 		
@@ -179,7 +180,7 @@ app.post('/login', function(req, res, next) {
 				res.send(html);
 			} catch (e) {
 				logErrors(err);
-				next(e);
+				 //next(e);
 			}
 		}
 		
@@ -215,7 +216,7 @@ app.post('/login', function(req, res, next) {
 				res.send(html);
 				
 			} catch(e) {
-				next(e);
+				 //next(e);
 			}
 		}
 	});
@@ -237,7 +238,7 @@ app.post('/signup-form', function(req, res, next) {
 		res.send(html);
 		
 	} catch(e) {
-		next(e);
+		 //next(e);
 	}
 
 });
@@ -246,9 +247,6 @@ app.post('/signup-form', function(req, res, next) {
 app.post('/signup', function(req, res, next) {
 
 	var formData = req.body;
-	/************************
-	//TODO: check for malicious form data here and scrub it
-	*/
 	//formData = sanitizeForm(formData);
 	//console.log(formData);
 	
@@ -323,7 +321,7 @@ app.post('/signup', function(req, res, next) {
 					res.send(html);
 				
 				} catch(e) {
-					next(e);
+					 //next(e);
 				}
 			}
 		
@@ -377,7 +375,7 @@ app.post('/signup', function(req, res, next) {
 						res.send(html);
 						
 					} catch (e) {
-						next(e)
+						 //next(e)
 					}
 					});
 				});
@@ -415,7 +413,93 @@ app.get('/guest', function(req, res, next) {
 		res.send(html);
 			
 	} catch (e) {
-		next(e)
+		 //next(e)
+	}
+});
+
+//handle password change
+app.post('/change-password', function(req, res, next) {
+	var cookies = cookie.parse(req.headers.cookie || '');
+	var user = cookies.id;
+	
+	var formData = req.body;
+	
+	var originalPass = formData['orig-pass'];
+	var newPass = formData['new-pass'];
+	var confirm = formData['confirm-pass'];
+	
+	//check that password and confirmation password are the same
+	//send page with error if not
+	if(newPass != confirm) {
+		try {
+			var data = {
+				titleString: 'Account',
+				view: cookies.permission,
+				greetingName: cookies.name,
+			
+				changePassStatus: "New password did not match confirm password, please re-enter"
+			}
+			
+			var html = template.renderFile(__dirname + '/static/account.jade', data);
+
+			res.send(html);
+		
+		} catch(e) {
+			 //next(e);
+		}
+	}
+
+	else {
+		db.all("select * from People where id = ?", [user], function(err, rows) {
+		
+			var hashPass = require('crypto').createHash('md5').update(originalPass).digest('hex');
+			var hashNewPass = require('crypto').createHash('md5').update(newPass).digest('hex');
+			//if password doesn't match current password resend page with error
+			if(rows[0].password != hashPass) {
+				try {
+					var data = {
+						titleString: 'Account',
+						view: cookies.permission,
+						greetingName: cookies.name,
+					
+						changePassStatus: "Invalid password"
+					}
+				
+					var html = template.renderFile(__dirname + '/static/account.jade', data);
+
+					res.send(html);
+		
+				} catch(e) {
+					 //next(e);
+				}
+			}
+			
+			//passwords math and new pass is confirmed, so change db
+			else {
+				//modify password in db
+				db.run("update People set password = ? where id = ?", [hashNewPass, user], function(err) {
+					if(err) { logErrors(err); }
+				});
+				
+				//re-direct to account page with status success
+				try {
+					var data = {
+						titleString: 'Account',
+						view: cookies.permission,
+						greetingName: cookies.name,
+					
+						changePassStatus: "Successfully changed password"
+					}
+				
+					var html = template.renderFile(__dirname + '/static/account.jade', data);
+
+					res.send(html);
+		
+				} catch(e) {
+					 //next(e);
+				}
+			}
+		});
 	}
 });
 
@@ -453,7 +537,7 @@ app.get('/logout', function(req, res, next) {
 		res.send(html);
 			
 	} catch (e) {
-		next(e)
+		 //next(e)
 	}
 
 });
@@ -464,30 +548,30 @@ Handling page content calls (create, read, update, delete)
 ****************************************************************************/
 
 //get user's profile
-app.get('/profile', function(req, res, next) {
+app.get('/Account', function(req, res, next) {
 	var cookies = cookie.parse(req.headers.cookie || '');
 	var id = cookies.id;
 	
-	res.redirect('/profile/' + id);
+	res.redirect('/Account/' + id);
 
 });
 
-app.get('/profile/*', function(req, res, next) {
+app.get('/Account/*', function(req, res, next) {
 	var cookies = cookie.parse(req.headers.cookie || '');
 	
 	try {
 		var data = {
-			titleString: 'Profile',
+			titleString: 'Account',
 			view: cookies.permission,
 			greetingName: cookies.name
 			
 		}
 		
-		var html = template.renderFile(__dirname + '/static/profile.jade', data);
+		var html = template.renderFile(__dirname + '/static/account.jade', data);
 
 		res.send(html);
 	} catch(e) {
-		next(e);
+		 //next(e);
 	}
 });
 
@@ -524,7 +608,7 @@ app.get("/Announcements/*", function(req, res, next) {
 				res.send(html);
 		
 			} catch(e) {
-				next(e);
+				 //next(e);
 			}
 		});
 	}
@@ -558,7 +642,7 @@ app.get("/Announcements/*", function(req, res, next) {
 				res.send(html);
 		
 			} catch(e) {
-				next(e);
+				 //next(e);
 			}
 		});
 	}
@@ -614,7 +698,7 @@ app.post('/add-announcement', function(req, res, next) {
 					res.send(html);
 			
 				} catch(e) {
-					next(e);
+					 //next(e);
 				}
 			});
 		}
@@ -646,7 +730,7 @@ app.post('/add-announcement', function(req, res, next) {
 					res.send(html);
 			
 				} catch(e) {
-					next(e);
+					 //next(e);
 				}
 			});
 		
@@ -662,38 +746,67 @@ app.delete('/delete-announcements/*', function(req, res, next) {
 
 	var announcementId = req.params[0];
 	
-	db.run("delete from Announcements where id=?", [announcementId], function(err) {
-		if(err) {
-			logErrors(err);
-		}
-		
-		//no errors = send updated page
-		else {
-			db.all("select * from Announcements order by date desc limit 10", function(err, rows) {
-				if(err) {
-					logErrors(err);
-				}
-				
-				try {
-					var data = {
-						view: cookies.view,
-						greetingName: cookies.name,
-						titleString: "Home",
-						
-						announcements: rows
+	//only actually delete if this is a call from an admin
+	if(cookies.permission == 'admin') {
+		db.run("delete from Announcements where id=?", [announcementId], function(err) {
+			if(err) {
+				logErrors(err);
+			}
+			
+			//no errors = send updated page
+			else {
+				db.all("select * from Announcements order by date desc limit 10", function(err, rows) {
+					if(err) {
+						logErrors(err);
 					}
 					
-					var html = template.renderFile(__dirname + "/static/announcements.jade", data);
-					
-					res.send(html);
-			
-				} catch(e) {
-					next(e);
-				}
-			});
-		}
+					try {
+						var data = {
+							view: cookies.view,
+							greetingName: cookies.name,
+							titleString: "Home",
+							
+							announcements: rows
+						}
+						
+						var html = template.renderFile(__dirname + "/static/announcements.jade", data);
+						
+						res.send(html);
+				
+					} catch(e) {
+						 //next(e);
+					}
+				});
+			}
+		
+		});
+	}
 	
-	});
+	//else just re-send page as is
+	else {
+		db.all("select * from Announcements order by date desc limit 10", function(err, rows) {
+			if(err) {
+				logErrors(err);
+			}
+			
+			try {
+				var data = {
+					view: cookies.view,
+					greetingName: cookies.name,
+					titleString: "Home",
+					
+					announcements: rows
+				}
+				
+				var html = template.renderFile(__dirname + "/static/announcements.jade", data);
+				
+				res.send(html);
+		
+			} catch(e) {
+				 //next(e);
+			}
+		});
+	}
 });
 
 //get documents page
@@ -724,7 +837,7 @@ app.get('/Documents', function(req, res, next) {
 			res.send(html);
 
 		} catch(e) {
-			next(e);
+			 //next(e);
 		}
 	});
 
@@ -771,12 +884,548 @@ app.post('/documents-upload', upload.single('file'), function(req, res, next) {
 			res.send(html);
 
 		} catch(e) {
-			next(e);
+			 //next(e);
 		}
 	});
 	
 	});// end serialize
 	
+});
+
+//filter by names, assignment name
+app.post('/Documents/filter', function(req, res, next) {
+	var cookies = cookie.parse(req.headers.cookie || '');
+	var formData = req.body;
+	
+	var first = formData['first-name'];
+	var last = formData['last-name'];
+	var assignment = formData['assignment-name'];
+	
+	var args = []; //will hold the arguments to fill in "?" in sql statement
+	var sql = "select Documents.id, Documents.date, Documents.assignment_name, \
+			   Documents.path, Documents.original_name, Documents.link_path, \
+			   People.first_name, People.last_name \
+			   from Documents join People on Documents.person = People.id";
+	
+	//if any of the fields is filled, we add a where clause
+	if(first || last || assignment) {
+		sql = sql + " where ";
+	}
+	
+	if(first) {
+		sql = sql + "People.first_name like ?";
+		args.push("%" + first + "%");
+	}
+	
+	//check if either of the other two is filled, and add "and"
+	if((last ||  assignment) && first) {
+		sql = sql + " and ";
+	}
+	
+	if(last) {
+		sql = sql + "People.last_name like ?";
+		args.push("%" + last + "%");
+	}
+	
+	//if there's a field other than assignment, we need an "and"
+	if(last && assignment) {
+		sql = sql + ' and ';
+	}
+	
+	if(assignment) {
+		sql = sql + "Documents.assignment_name like ?";
+		args.push("%" + assignment + "%");
+	}
+	
+	sql = sql + " order by Documents.date desc;";
+	
+	var stmt = db.prepare(sql);
+	
+	stmt.all(args, function(err, rows) { 
+		if(err) {
+			logErrors(err);
+		}
+		try {
+			var data = {
+				titleString: "Writing",
+				view: cookies.view,
+				greetingName: cookies.name,
+				
+				uploads: rows
+			}
+			
+			var html = template.renderFile(__dirname + "/static/uploads.jade", data);
+
+			res.send(html);
+
+		} catch(e) {
+			 //next(e);
+		}
+	});
+});
+
+//admin documents delete
+app.delete('/Documents/*', function(req, res, next) {
+	var linkId = req.params[0];
+	var cookies = cookie.parse(req.headers.cookie || '');
+	
+	if(cookies.permission == 'admin') {
+		db.serialize(function() {
+		
+		//delete file from file system
+		db.all("select * from Documents where id=?", [linkId], function(err, rows) {
+			if(err) {
+				logErrors(err);
+			}
+			
+			else {
+				try {
+					fs.unlinkSync("./" + rows[0].path);
+				} catch(e) {
+					logErrors(e);
+				}
+			}
+		
+		});
+		
+		//delete reference to file in db
+		db.run("delete from Documents where id=?", [linkId], function(err) {
+			if(err) {
+				logErrors(err);
+			}
+			
+			//no errors = send updated page
+			else {
+				var sql = "select Documents.id, Documents.date, Documents.assignment_name, \
+				   Documents.path, Documents.original_name, Documents.link_path, \
+				   People.first_name, People.last_name \
+				   from Documents join People on Documents.person = People.id \
+				   order by Documents.date desc;";
+				   
+				db.all(sql, function(err, rows) { 
+					if(err) {
+						logErrors(err);
+					}
+					try {
+						var data = {
+							titleString: "Writing",
+							view: cookies.view,
+							greetingName: cookies.name,
+							
+							uploads: rows
+						}
+						
+						var html = template.renderFile(__dirname + "/static/uploads.jade", data);
+
+						res.send(html);
+
+					} catch(e) {
+						 //next(e);
+					}
+				});
+			}
+		
+		});
+		
+		}); // end serialize
+	}
+	
+	else {
+		var sql = "select Documents.id, Documents.date, Documents.assignment_name, \
+		   Documents.path, Documents.original_name, Documents.link_path, \
+		   People.first_name, People.last_name \
+		   from Documents join People on Documents.person = People.id \
+		   order by Documents.date desc;";
+		   
+		db.all(sql, function(err, rows) { 
+			if(err) {
+				logErrors(err);
+			}
+			try {
+				var data = {
+					titleString: "Writing",
+					view: cookies.view,
+					greetingName: cookies.name,
+					
+					uploads: rows
+				}
+				
+				var html = template.renderFile(__dirname + "/static/uploads.jade", data);
+
+				res.send(html);
+
+			} catch(e) {
+				//next(e);
+			}
+		});
+	}
+});
+
+//get books - first page is books with their scores and info
+app.get('/Books', function(req, res, next) {
+	var cookies = cookie.parse(req.headers.cookie || '');
+	
+	var sql = "select Books.id, Books.title, Books.author_first, Books.author_last, Books.genre, \
+			   round(avg(Reviews.score), 2) as average \
+			   from Books join Reviews on Books.id = Reviews.book \
+			   group by Books.title \
+			   order by average desc;"
+			   
+	db.all(sql, function(err, rows) {
+		if(err) { logErrors(err) }
+		
+		try {
+			var data = {
+				titleString: "Books",
+				view: cookies.view,
+				greetingName: cookies.name,
+				
+				books: rows
+			}
+			
+			var html = template.renderFile(__dirname + "/static/book-reviews.jade", data);
+			
+			res.send(html);
+			
+		} catch(e) {
+			//next(e)
+		}
+	
+	});
+});
+
+//filter book results
+app.post('/Books/filter', function(req, res, next) {
+	var cookies = cookie.parse(req.headers.cookie || '');
+	var formData = req.body;
+
+	var sql = "select Books.id, Books.title, Books.author_first, Books.author_last, Books.genre, \
+		   round(avg(Reviews.score), 2) as average \
+		   from Books join Reviews on Books.id = Reviews.book";
+		   
+	var args = []; //holds argument to pass to db.all(sql, args, function)
+	
+	var length = 0; //# of non-empty args
+	for(var value in formData) {
+		if(formData.hasOwnProperty(value)) {
+			if(formData[value] != '') {
+				length += 1;
+			}
+		}
+	}
+	
+	//if search has any parameters we add where clause, otherwise just resend all books
+	if(length > 0) {
+		sql = sql + " where "
+	
+		for(var value in formData) {
+			if(formData.hasOwnProperty(value)) {
+				if(formData[value] != '') {
+					if(value == 'book-title') {
+						sql = sql + "Books.title like ?";
+						args.push("%" + formdata['book-title'] + "%");
+					}
+					
+					else if(value == 'first-name') {
+						sql = sql + "Books.author_first like ?";
+						args.push("%" + formData['first-name'] + "%");
+					}
+					
+					else if(value == 'last-name') {
+						sql = sql + "Books.author_last like ?";
+						args.push("%" + formData['last-name'] + "%");
+					}
+					
+					else if(value == 'genre') {
+						sql = sql + "Books.genre like ?";
+						args.push("%" + formData['genre'] + "%");
+					}
+					
+					else if(value == 'review-score') {
+						sql = sql + "Reviews.score = ?";
+						args.push(formData['review-score']);
+					}
+					
+					//add in "and" between where clause statements
+					if(length > 1) {
+						sql = sql + " and ";
+						length--;
+					}
+				}
+			}
+		}
+	}
+		   
+	sql = sql + " group by Books.title order by average desc;";
+	
+	var stmt = db.prepare(sql);
+	
+	stmt.all(args, function(err, rows) {
+	
+		if(err) { logErrors(err) }
+		
+		try {
+			var data = {
+				titleString: "Books",
+				view: cookies.view,
+				greetingName: cookies.name,
+				
+				books: rows
+			}
+			
+			var html = template.renderFile(__dirname + "/static/books.jade", data);
+			
+			res.send(html);
+			
+		} catch(e) {
+			 //next(e)
+		}
+	
+	});
+});
+
+//add book review
+app.post('/add-review', function(req, res, next) {
+	var cookies = cookie.parse(req.headers.cookie || '');
+	var formData = req.body;
+	
+	var title = formData['book-title'];
+	title = validator.escape(title);
+	title = titleCase(title);
+	var authorFirst = formData['author-first'];
+	authorFirst = validator.escape(authorFirst);
+	var authorLast = formData['author-last'];
+	authorLast = validator.escape(authorLast);
+	var genre = formData['book-genre'];
+	genre = validator.escape(genre);
+	var pages = formData['book-pages'];
+	pages = validator.escape(pages);
+	
+	var score = formData['review-score'];
+	var content = formData['review-content'];
+	
+	var reviewer = cookies.id;
+	
+	
+	db.serialize(function() {
+	var status = '';
+	//insert book and review
+	db.all("select * from Books where title = ?", function(err, rows) {
+		if(err) { logErrors(err) }
+		
+		//book doesn't exist
+		if(rows.length == 0) {
+			db.serialize(function() {
+				//insert as new book
+				var bookstmt = db.prepare("insert into Books(id, title, author_first, author_last, pages, genre) values(?,?,?,?,?,?)");
+				bookstmt.run([null, title, authorFirst, authorLast, pages, genre],
+					function(err) { 
+						if(err) { logErrors(err); }
+					}
+				);
+				
+				//get book id
+				db.all("select * from Books where title = ?", [title], function(err, rows) {
+					var bookID = rows[0].id;
+					
+					//insert review
+					var revstmt = db.prepare("insert into Reviews(id, writer, book, score, date, text) \
+						values(?,?,?,?,datetime('now', 'localtime'), ?)");
+						
+					revstmt.run([null, reviewer, bookID, score, content],
+						function(err) { 
+							if(err) { logErrors(err); }
+						}
+					);
+				});
+				
+			
+			}); //end db.serialize	
+		}
+		
+		//if book already exists, just insert review
+		else {
+			//get book id
+			db.all("select * from Books where title = ?", [title], function(err, rows) {
+					var bookID = rows[0].id;
+					
+					//insert review
+					var revstmt = db.prepare("insert into Reviews(id, writer, book, score, date, text) \
+						values(?,?,?,?,datetime('now', 'localtime'), ?)");
+						
+					revstmt.run([null, reviewer, bookID, score, content],
+						function(err) { 
+							if(err) { logErrors(err); }
+						}
+					);
+			});
+		}
+	});
+	
+	//send page data
+	var sql = "select Books.id, Books.title, Books.author_first, Books.author_last, Books.genre, \
+		   round(avg(Reviews.score), 2) as average \
+		   from Books join Reviews on Books.id = Reviews.book \
+		   group by Books.title \
+		   order by average asc;"
+			   
+	db.all(sql, function(err, rows) {
+		if(err) { logErrors(err); }
+		status = "Success";
+		try {
+			var data = {
+				titleString: "Books",
+				view: cookies.view,
+				greetingName: cookies.name,
+				
+				books: rows,
+				addReviewStatus: status
+			}
+			
+			var html = template.renderFile(__dirname + "/static/books.jade", data);
+			
+			res.send(html);
+			
+		} catch(e) {
+			 //next(e)
+		}
+	
+	});
+	
+	}); //end outer db.serialize
+});
+
+//add book review from review page (i.e. book already exists, and we have info on it)
+app.post('/add-review-existing', function(req, res, next) {
+	var cookies = cookie.parse(req.headers.cookie || '');
+	var formData = req.body;
+
+	var title = formData['book-title'];
+	title = titleCase(title);
+	var score = formData['review-score'];
+	var content = formData['review-content'];
+	var reviewer = cookies.id;
+	
+	//get book id
+	db.all("select * from Books where title = ?", [title], function(err, rows) {
+		var bookID = rows[0].id;
+		
+		db.serialize(function() {
+		//insert review
+		var stmt = db.prepare("insert into Reviews(id, writer, book, score, date, text) \
+			values(?,?,?,?,datetime('now', 'localtime'), ?)");
+		
+		stmt.run([null, reviewer, bookID, score, content],
+			function(err) { 
+				if(err) { logErrors(err); }
+			}
+		);
+		
+		var sql = "select People.first_name as r_first, People.last_name as r_last, \
+			   Reviews.id as rid, Reviews.score as score, Reviews.date as date, \
+			   Books.title as title, Books.author_first as a_first, \
+			   Books.author_last as a_last, Books.pages as pages, Books.genre as genre \
+			   from People join (Reviews join Books on Reviews.book = Books.id) \
+			   on People.id = Reviews.writer \
+			   where Reviews.book = ? \
+			   order by Reviews.date desc";
+			   
+		db.all(sql, [bookID], function(err, rows) {
+			if(err) { logErrors(err); }
+			
+			var data = {
+				titleString: rows[0].title,
+				bookTitle: rows[0].title,
+				view: cookies.view,
+				greetingName: cookies.name,
+				
+				reviews: rows
+			}
+		
+			var html = template.renderFile(__dirname + "/static/reviews.jade", data);
+			
+			res.send(html);
+		});
+		
+		}); //end db.serialize
+	});
+	
+});
+
+//get reviews for a particular book
+app.get('/Books/*', function(req, res, next) {
+	var cookies = cookie.parse(req.headers.cookie || '');
+	var bookId = req.params[0];
+	
+	var sql = "select People.first_name as p_first, People.last_name as p_last, \
+			   Reviews.id as rid, Reviews.score as score, Reviews.date as date, \
+			   Books.title as title, Books.author_first as a_first, \
+			   Books.author_last as a_last, Books.pages as pages, Books.genre as genre \
+			   from People join (Reviews join Books on Reviews.book = Books.id) \
+			   on People.id = Reviews.writer \
+			   where Reviews.book = ? \
+			   order by Reviews.date desc";
+			   
+	db.all(sql, [bookId], function(err, rows) {
+		if(err) { logErrors(err); }
+		
+		try {
+			var data = {
+				titleString: rows[0].title,
+				bookTitle: rows[0].title,
+				view: cookies.view,
+				greetingName: cookies.name,
+				
+				reviews: rows,
+				author: rows[0].a_first + " " + rows[0].a_last,
+				pages: rows[0].pages,
+				genre: rows[0].genre,
+			}
+		
+			var html = template.renderFile(__dirname + "/static/bookinfo.jade", data);
+			
+			res.send(html);
+		} catch(e) {
+			next(e);
+		}
+	});
+
+});
+
+//get a particular review (linked from book page
+app.get('/Reviews/*', function(req, res, next) {
+	var cookies = cookie.parse(req.headers.cookie || '');
+	var reviewId = req.params[0];
+	
+	var sql = "select * from Books join Reviews on Books.id = Reviews.book where Reviews.id = ?";
+
+	db.all(sql, [reviewId], function(err, rows) {
+		db.all("select * from People where id = ?", [rows[0].writer], function(err, prows) {
+			
+			try {
+				var data = {
+					titleString: "Review",
+					view: cookies.view,
+					greetingName: cookies.name,
+					
+					title: rows[0].title,
+					reviewer: prows[0].first_name + " " + prows[0].last_name,
+					author: rows[0].author_first + " " + rows[0].author_last,
+					genre: rows[0].genre,
+					pages: rows[0].pages,
+					score: rows[0].score,
+					date: rows[0].date,
+					review: rows[0].text
+				}
+				
+				var html = template.renderFile(__dirname + "/static/review.jade", data); 
+			
+				res.send(html);
+			} catch(e) {
+				//next(e);
+			}
+		});
+	});
 });
 
 //get course links list
@@ -801,7 +1450,7 @@ app.get('/CourseLinks', function(req, res, next) {
 				res.send(html);
 			
 			} catch(e) {
-				next(e);
+				 //next(e);
 			}
 		}
 	});
@@ -831,8 +1480,8 @@ app.post('/addlink-form', function(req, res, next) {
 			}
 			
 			try {
-				console.log("status");
-				console.log(status);
+				//console.log("status");
+				//console.log(status);
 				var data = {
 					linkNameValue: name,
 					linkURLValue: url,
@@ -849,7 +1498,7 @@ app.post('/addlink-form', function(req, res, next) {
 				res.send(html);
 		
 			} catch(e) {
-				next(e);
+				 //next(e);
 			}
 		});
 	}
@@ -892,7 +1541,7 @@ app.post('/addlink-form', function(req, res, next) {
 						res.send(html);
 				
 					} catch(e) {
-						next(e);
+						 //next(e);
 					}
 				});
 			}
@@ -918,7 +1567,7 @@ app.post('/addlink-form', function(req, res, next) {
 						res.send(html);
 				
 					} catch(e) {
-						next(e);
+						 //next(e);
 					}
 				});
 			}
@@ -932,38 +1581,63 @@ app.delete('/CourseLinks/*', function(req, res, next) {
 	var linkId = req.params[0];
 	var cookies = cookie.parse(req.headers.cookie || '');
 	
-	db.run("delete from CourseLinks where id=?", [linkId], function(err) {
-		if(err) {
-			logErrors(err);
-		}
-		
-		//no errors = send updated page
-		else {
-			db.all("select * from CourseLinks order by name", function(err, rows) {
-				if(err) {
-					logErrors(err);
-				}
-				
-				try {
-					var data = {
-						view: cookies.view,
-						greetingName: cookies.name,
-						
-						links: rows
+	if(cookies.permission == 'admin') {
+		db.run("delete from CourseLinks where id=?", [linkId], function(err) {
+			if(err) {
+				logErrors(err);
+			}
+			
+			//no errors = send updated page
+			else {
+				db.all("select * from CourseLinks order by name", function(err, rows) {
+					if(err) {
+						logErrors(err);
 					}
 					
-					var html = template.renderFile(__dirname + "/static/links.jade", data);
-					
-					res.send(html);
-			
-				} catch(e) {
-					next(e);
-				}
-			});
-		}
+					try {
+						var data = {
+							view: cookies.view,
+							greetingName: cookies.name,
+							
+							links: rows
+						}
+						
+						var html = template.renderFile(__dirname + "/static/links.jade", data);
+						
+						res.send(html);
+				
+					} catch(e) {
+						 //next(e);
+					}
+				});
+			}
+		
+		});
+	}
 	
-	});
-
+	else {
+		db.all("select * from CourseLinks order by name", function(err, rows) {
+			if(err) {
+				logErrors(err);
+			}
+			
+			try {
+				var data = {
+					view: cookies.view,
+					greetingName: cookies.name,
+					
+					links: rows
+				}
+				
+				var html = template.renderFile(__dirname + "/static/links.jade", data);
+				
+				res.send(html);
+		
+			} catch(e) {
+				 //next(e);
+			}
+		});
+	}
 });
 
 //handle admin update of link
@@ -1002,7 +1676,7 @@ app.post('/UpdateLink/*', function(req, res, next) {
 					res.send(html);
 			
 				} catch(e) {
-					next(e);
+					 //next(e);
 				}
 			});
 		}
@@ -1013,12 +1687,178 @@ app.post('/UpdateLink/*', function(req, res, next) {
 /**********************************************************
 * Admin tools
 ***********************************************************/
+//handle admin key change
+app.post('/change-admin-key', function(req, res, next) {
+	var cookies = cookie.parse(req.headers.cookie || '');
+	
+	var formData = req.body;
+	
+	var originalKey = formData['orig-key'];
+	var newKey = formData['new-key'];
+	var confirm = formData['confirm-key'];
+	
+	//check that password and confirmation password are the same
+	//send page with error if not
+	if(newKey != confirm) {
+		try {
+			var data = {
+				titleString: 'Account',
+				view: cookies.permission,
+				greetingName: cookies.name,
+			
+				changeAdminKeyStatus: "New key did not match confirm key, please re-enter"
+			}
+			
+			var html = template.renderFile(__dirname + '/static/account.jade', data);
+
+			res.send(html);
+		
+		} catch(e) {
+			 //next(e);
+		}
+	}
+
+	else if(cookies.permission == "admin") {
+		db.all("select * from AdminConfig", function(err, rows) {
+		
+			//if key doesn't match current key resend page with error
+			if(rows[0].admin_key != originalKey) {
+				try {
+					var data = {
+						titleString: 'Account',
+						view: cookies.permission,
+						greetingName: cookies.name,
+					
+						changeAdminKeyStatus: "Invalid key entered, please enter the correct admin key"
+					}
+				
+					var html = template.renderFile(__dirname + '/static/account.jade', data);
+
+					res.send(html);
+		
+				} catch(e) {
+					 //next(e);
+				}
+			}
+			
+			//keys match and new key is confirmed, so change db
+			else {
+				//modify password in db
+				db.run("update AdminConfig set admin_key = ?", [newKey], function(err) {
+					if(err) { logErrors(err); }
+				});
+				
+				//re-direct to account page with status success
+				try {
+					var data = {
+						titleString: 'Account',
+						view: cookies.permission,
+						greetingName: cookies.name,
+					
+						changeAdminKeyStatus: "Successfully changed admin key"
+					}
+				
+					var html = template.renderFile(__dirname + '/static/account.jade', data);
+
+					res.send(html);
+		
+				} catch(e) {
+					 //next(e);
+				}
+			}
+		});
+	}
+});
+
+//handle student key change
+app.post('/change-student-key', function(req, res, next) {
+	var cookies = cookie.parse(req.headers.cookie || '');
+	
+	var formData = req.body;
+	
+	var originalKey = formData['orig-key'];
+	var newKey = formData['new-key'];
+	var confirm = formData['confirm-key'];
+	
+	//check that password and confirmation password are the same
+	//send page with error if not
+	if(newKey != confirm) {
+		try {
+			var data = {
+				titleString: 'Account',
+				view: cookies.permission,
+				greetingName: cookies.name,
+			
+				changeStudentKeyStatus: "New key did not match confirm key, please re-enter"
+			}
+			
+			var html = template.renderFile(__dirname + '/static/account.jade', data);
+
+			res.send(html);
+		
+		} catch(e) {
+			 //next(e);
+		}
+	}
+
+	else if(cookies.permission == "admin") {
+		db.all("select * from AdminConfig", function(err, rows) {
+		
+			//if key doesn't match current key resend page with error
+			if(rows[0].student_key != originalKey) {
+				try {
+					var data = {
+						titleString: 'Account',
+						view: cookies.permission,
+						greetingName: cookies.name,
+					
+						changeStudentKeyStatus: "Invalid key entered, please enter the correct student key"
+					}
+				
+					var html = template.renderFile(__dirname + '/static/account.jade', data);
+
+					res.send(html);
+		
+				} catch(e) {
+					 //next(e);
+				}
+			}
+			
+			//keys match and new key is confirmed, so change db
+			else {
+				//modify password in db
+				db.run("update AdminConfig set student_key = ?", [newKey], function(err) {
+					if(err) { logErrors(err); }
+				});
+				
+				//re-direct to account page with status success
+				try {
+					var data = {
+						titleString: 'Account',
+						view: cookies.permission,
+						greetingName: cookies.name,
+					
+						changeStudentKeyStatus: "Successfully changed student key"
+					}
+				
+					var html = template.renderFile(__dirname + '/static/account.jade', data);
+
+					res.send(html);
+		
+				} catch(e) {
+					 //next(e);
+				}
+			}
+		});
+	}
+});
+
 //rebuild database (drop tables, rebuild them, and add webmaster account and signup keys)
 app.post('/database/rebuild', function(req, res, next) {
 	var cookies = cookie.parse(req.headers.cookie || '');
 	
 	if(cookies.permission == 'admin') {
-		dbsetup.rebuild(db);
+		dbsetup.rebuild(db, rimraf, dataPath);
 	}
 	
 	res.redirect('/logout');
@@ -1052,7 +1892,7 @@ app.post('/database/sql', function(req, res, next) {
 
 					res.send(html);
 				} catch(e) {
-					next(e);
+					 //next(e);
 				}
 			}
 			
@@ -1071,7 +1911,7 @@ app.post('/database/sql', function(req, res, next) {
 
 					res.send(html);
 				} catch(e) {
-					next(e);
+					 //next(e);
 				}
 			
 			}
@@ -1100,7 +1940,7 @@ app.post('/database/clear-students', function(req, res, next) {
 
 			res.send(html);
 		} catch(e) {
-			next(e);
+			 //next(e);
 		}
 	}
 
@@ -1216,22 +2056,30 @@ function checkAddLinkForm(data) {
 //sanitize form data
 //runs through each value in a post form and sanitizes it
 function sanitizeForm(data) {
-	console.log("Pre-sanitize");
-	console.log(data)
 
 	for (var x in data) {
 		data[x] = validator.escape(data[x]);
 	}
 	
-	console.log("Post-sanitize");
-	console.log(data)
-	
 	return data;
 }
 
+function titleCase(str) {
+	var split = str.split(' ');
+	for(var i = 0; i < split.length; i++) {
+		split[i] = split[i].charAt(0).toUpperCase() + split[i].substr(1).toLowerCase();
+	}
+	
+	return split.join(' ');
+}
+
+
+/*********************************************************88
+* Error logging methods
+*/
 //function to handle error logging
-//for now just console.log, but could change to more advanced loggin later
+//for now just console.log, but could change to more advanced logging later
 function logErrors(err) {
-	console.log(err);
+	//console.log(err);
 }
 

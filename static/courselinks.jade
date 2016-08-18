@@ -5,3 +5,10 @@ block page-content
 	
 	div(id="course-links-content")
 		include ./links.jade
+		
+block scripts
+	script.
+		$(document).ready(function() {
+			$("#courselinks-link").addClass("active");
+		
+		});
