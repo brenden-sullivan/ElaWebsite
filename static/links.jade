@@ -1,7 +1,7 @@
 mixin courseLinkBlock(data)
 	div(class="course-link")
 		h2(class="course-link-name")
-			a(href=data.link class="course-link-name-link")=data.name
+			a(href=data.link class="course-link-name-link" target="_blank")=data.name
 		//a(href=data.link class="course-link-url" style="display:none")=data.link
 		p(class="course-link-description")=data.description
 
@@ -10,7 +10,7 @@ mixin adminCourseLinkBlock(data)
 	-var divId = data.id + "-div"
 	div(id=divId class="course-link")
 		h2(class="course-link-name")
-			a(href=data.link class="course-link-name-link")=data.name
+			a(href=data.link class="course-link-name-link" target="_blank")=data.name
 		//a(href=data.link class="course-link-url" style="display:none")=data.link
 		p(class="course-link-description")=data.description
 		
