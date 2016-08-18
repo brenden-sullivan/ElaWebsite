@@ -225,11 +225,10 @@ th {
 	margin: 0px;
 	
 	color: #ffffff;
-	
-	background-image: url(/static/js/themes/blue/bg.gif);
 }
 
 th.header {
+	background-image: url(/static/js/themes/blue/bg.gif);
 	background-position: center right;
 	background-repeat: no-repeat;
 }
