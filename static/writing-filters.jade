@@ -4,18 +4,33 @@ div(id="document-filters-div")
 			legend Search
 			
 			label(class="filters-label")
-				strong First Name
+				strong Name
 			input(id="doc-filters-first" name="first-name" type="text" size="30" placeholder="First Name")
-			
-			br
-			label(class="filters-label")
-				strong Last Name
 			input(id="doc-filters-last" name="last-name" type="text" size="30" placeholder="Last Name")
 			
 			br
 			label(class="filters-label")
 				strong Assignment
 			input(id="doc-filters-assign" name="assignment-name" type="text" size="30" placeholder="Assignment")
+			
+			br
+			label(class="filters-label")
+				strong Teacher
+			input(id="doc-filters-assign" name="teacher" type="text" size="30" placeholder="Assignment")
+			
+			br
+			label(class="filters-label")
+				strong Hour
+			select(id="score-filter" name="hour")
+					option(value="") -
+					option(value="1") 1
+					option(value="2") 2
+					option(value="3") 3
+					option(value="4") 4
+					option(value="5") 5
+					option(value="6") 6
+					option(value="7") 7
+					option(value="8") 8
 			
 			br
 			input(id="doc-filters-submit" class="input-button search-button" type="submit" value="Search")

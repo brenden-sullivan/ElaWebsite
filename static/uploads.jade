@@ -4,10 +4,12 @@ mixin uploadsRow(data)
 		tr(id=docId)
 			td=data.first_name
 			td=data.last_name
-			td=data.assignment_name
+			td=data.teacher
+			td=data.hour
+			//-td=data.assignment_name
 			td
 				-var link = data.link_path
-				a(href=link target="_blank")=data.original_name
+				a(href=link target="_blank")=data.assignment_name
 			td=data.date
 
 
@@ -17,14 +19,16 @@ mixin adminUploadsRow(data)
 		tr(id=docId)
 			td=data.first_name
 			td=data.last_name
-			td=data.assignment_name
+			td=data.teacher
+			td=data.hour
+			//-td=data.assignment_name
 			td
 				-var link = data.link_path
-				a(href=link target="_blank")=data.original_name
+				a(href=link target="_blank")=data.assignment_name
 			td=data.date
 			td
 				-var deleteButtonId = data.id + "-delete-button"
-				button(id=deleteButtonId class="delete-button" onclick="deleteClicked(this)") Delete
+				button(id=deleteButtonId class="delete-button small-button" onclick="deleteClicked(this)") Delete
 	
 mixin uploadForm
 	div(id="document-upload-form-div")
@@ -32,10 +36,15 @@ mixin uploadForm
 			label(class="add-form-label")
 				strong Assignment Name:
 			input(id="add-assignment-name-input" name="doc-assignment-name" type="text" size="30" placeholder="Assignment" value=docAssignName required)
-		
+			
+
+			//-label(class="add-form-label")
+				//-strong Upload Document:
+			//-input(id="add-assignment-doc-input" class="choice-button" name="doc-doc" type="file" required)
+			
 			label(class="add-form-label")
-				strong Upload Document:
-			input(id="add-assignment-doc-input" class="choice-button" name="doc-doc" type="file" required)
+				strong Link:
+			input(id="add-link-doc-input" name="url" type="url" size="30" placeholder="Google Docs Link" required)
 			
 			br
 			input(id="add-doc-submit" class="input-button submit-button" type="submit" value="Submit")
@@ -53,23 +62,28 @@ mixin uploadForm
 			$("#documents-add-form").submit(function(e) {
 				e.preventDefault();
 				
+				/*
 				var assignIn = $("#add-assignment-name-input");
 				
 				var fileIn = $("#add-assignment-doc-input");
 				var file = fileIn[0].files[0];
 				
+				
 				var inputs = new FormData();
 				inputs.append('file', file, file.name);
 				inputs.append('assignment', assignIn.val());
 				//console.log(inputs);
+				*/
+				
+				var inputs = $("#documents-add-form :input");
 				
 				$.ajax({
 					url: "/documents-upload",
 					type: "POST",
 					dataType: "html",
 					
-					contentType: false,
-					processData: false,
+					//contentType: false,
+					//processData: false,
 					
 					data: inputs,
 					
@@ -136,7 +150,7 @@ if(view == 'student' || view == 'admin')
 		div(id="documents-add-button-div" class="add-content")
 			h3(id="add-document-status" class="status-message")=addDocumentStatus
 			
-			button(id="show-add-form-button" class="add-button") Upload
+			button(id="show-add-form-button" class="add-button") Submit Writing
 		
 		+uploadForm
 			
@@ -146,8 +160,10 @@ if(view == 'student' || view == 'admin')
 					tr(class="table-header")
 						th First
 						th Last
+						th Teacher
+						th Hour
 						th Assignment
-						th Preview
+						//-th Preview
 						th Date Uploaded
 						if(view == 'admin')
 							th Remove
@@ -168,8 +184,10 @@ else if(view == 'guest')
 					tr(class="table-header")
 						th First
 						th Last
+						th Teacher
+						th Hour
 						th Assignment
-						th Preview
+						//-th Preview
 						th Date Uploaded
 				
 				tbody

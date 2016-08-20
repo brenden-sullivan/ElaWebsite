@@ -52,6 +52,25 @@ html
 							p(id="name-status" class="status-message")=nameStatus
 							
 						div("id=signup-form-info")
+							label(class="signup-form-label")
+								strong Teacher *
+							select(id="teacher-select" name="teacher")
+								option(value="") -
+								each val in teachers
+									option(value=val.id)=val.last_name
+							
+							label(class="signup-form-label")
+								strong Hour *
+							select(id="hour-select" name="hour" required)
+								option(value="") -
+								option(value="1") 1
+								option(value="2") 2
+								option(value="3") 3
+								option(value="4") 4
+								option(value="5") 5
+								option(value="6") 6
+								option(value="7") 7
+								option(value="8") 8
 						
 							label(id="name-label" class="signup-form-label")
 								strong Contact

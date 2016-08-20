@@ -3,22 +3,16 @@ mixin reviewsRow(data)
 		-var reviewId = data.rid
 		-var rowId = reviewId + "-table-row";
 		tr(id=rowId)
-			td=data.p_first
-			td=data.p_last
-			td=data.score
+			td=data.first
+			td=data.last
+			td=data.teacher
+			td=data.hour
 			td=data.date
 			td
-				-var link = "/Reviews/" + reviewId
-				a(href=link target="_blank") View
-
-div(id="reviews-content-div")
-
-	div("book-info-div")
-		h2=author
-		p=genre
-		-var pageString = pages + " pages"
-		p=pageString
-			
+				-var link = "/Reviews/" + data.rid
+				a(href=link target="_blank")=data.title
+				
+div(id="reviewslist-content-div")
 	//-have add review form and related scripts only for admin and student
 	if(view == 'admin' || view == 'student')
 		div(id="add-review-div")
@@ -29,8 +23,22 @@ div(id="reviews-content-div")
 				
 			div(id="add-review-form-div")
 				form(id="add-review-form" action="/add-review" method="POST" novalidate)
-					-var title = bookTitle
-					input(id="add-announcement-title" type="hidden" name="book-title" value=title required)
+					label(class="add-form-label")
+						strong Title
+					input(id="add-review-title" name="book-title" type="text" size="30" placeholder="Title" required)
+					
+					label(class="add-form-label")
+						strong Author
+					input(id="add-review-first" name="author-first" type="text" size="30" placeholder="First Name" required)
+					input(id="add-review-last" name="author-last" type="text" size="30" placeholder="Last Name" required)
+					
+					label(class="add-form-label")
+						strong Genre
+					input(id="add-review-genre" name="book-genre" type="text" size="30" placeholder="Genre" required)
+					
+					label(class="add-form-label")
+						strong Pages
+					input(id="add-review-pages" name="book-pages" type="text" size="30" placeholder="# of Pages" required)
 					
 					label(id="add-review-score-label" class="add-form-label")
 						strong Score
@@ -53,7 +61,9 @@ div(id="reviews-content-div")
 					
 					input(id="add-review-submit" class="input-button submit-button" type="submit" value="Submit")
 					button(id="hide-add-form-button" class="cancel-button") Cancel
-	
+					
+					
+					
 	//-everyone see book info		
 	div(id="reviews-table-div")
 		table(id="reviews-table")
@@ -62,9 +72,10 @@ div(id="reviews-content-div")
 				tr(class="table-header")
 					th First Name
 					th Last Name
-					th Score
+					th Teacher
+					th Hour
 					th Date
-					th Expand
+					th Book
 			
 			tbody
 				each val in reviews
@@ -75,7 +86,7 @@ div(id="reviews-content-div")
 		$(document).ready(function() {
 			if($("tbody").find("tr").length > 0) {
 				$("#reviews-table").tablesorter({
-					sortList: [[3,1]]
+					sortList: [[4,1]]
 				});
 			}
 			
@@ -93,18 +104,18 @@ div(id="reviews-content-div")
 				var inputs = $("#add-review-form :input");
 				
 				$.ajax({
-					url: "/add-review-existing",
+					url: "/add-review",
 					type: "POST",
 					dataType: "html",
 					
 					data: inputs,
 					
 					success: function(data) {
-						$("#bookinfo-content").html(data);
+						$("#reviewslist-content").html(data);
 						location.reload(true);
 						
 						$("#reviews-table").trigger("update");
-						var sorting = [3,1];
+						var sorting = [4,1];
 						$("#reviews-table").trigger("sorton", [sorting]);
 					},
 					

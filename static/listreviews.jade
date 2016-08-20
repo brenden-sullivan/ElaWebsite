@@ -1,0 +1,17 @@
+extends template.jade
+
+block page-content
+	h1(class="page-title") Book Reviews
+	
+	div(id="reviews-filters-div")
+		include ./reviews-filters.jade
+		
+	div(id="reviewslist-content")
+		include ./reviewslist.jade
+		
+block scripts
+	script.
+		$(document).ready(function() {
+			$("#reviews-link").addClass("active");
+		
+		});

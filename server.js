@@ -70,7 +70,7 @@ app.get('/', function(req, res, next) {
 				
 			res.send(html);
 		} catch (e) {
-			 //next(e);
+			 next(e);
 		}
 	}
 	
@@ -86,7 +86,7 @@ app.get('/', function(req, res, next) {
 				logErrors(err);
 			}
 			
-			db.all("select id, first_name, last_name from people where permission = 'admin';", function(err, people) {
+			db.all("select id, first_name, last_name from people where permission = 'admin' and id != 1;", function(err, people) {
 				if(err) {
 					logErrors(err);
 				}
@@ -107,7 +107,7 @@ app.get('/', function(req, res, next) {
 					res.send(html);
 			
 				} catch(e) {
-					 //next(e);
+					 next(e);
 				}
 				
 			});
@@ -144,7 +144,7 @@ app.post('/login', function(req, res, next) {
 					
 				res.send(html);
 			} catch (e) {
-				 //next(e);
+				 next(e);
 			}
 		}
 		
@@ -161,7 +161,7 @@ app.post('/login', function(req, res, next) {
 					
 				res.send(html);
 			} catch (e) {
-				 //next(e);
+				 next(e);
 			}
 		}
 		
@@ -180,7 +180,7 @@ app.post('/login', function(req, res, next) {
 				res.send(html);
 			} catch (e) {
 				logErrors(err);
-				 //next(e);
+				 next(e);
 			}
 		}
 		
@@ -216,7 +216,7 @@ app.post('/login', function(req, res, next) {
 				res.send(html);
 				
 			} catch(e) {
-				 //next(e);
+				 next(e);
 			}
 		}
 	});
@@ -228,18 +228,23 @@ app.post('/login', function(req, res, next) {
 //signup form
 //note - using post here only to prevent "?" at end of url which is default on get from form submit
 app.post('/signup-form', function(req, res, next) {
-	try {
-		var data = {
-			titleString: 'Sign Up'
-		};
-	
-		var html = template.renderFile(__dirname + '/static/signup-form.jade', data);
-			
-		res.send(html);
+	db.all("select id, last_name from People where permission = 'admin' and id != 1;", function(err, rows) {
+		console.log(rows);
 		
-	} catch(e) {
-		 //next(e);
-	}
+		try {
+			var data = {
+				titleString: 'Sign Up',
+				teachers: rows
+			};
+		
+			var html = template.renderFile(__dirname + '/static/signup-form.jade', data);
+				
+			res.send(html);
+			
+		} catch(e) {
+			 next(e);
+		}
+	});
 
 });
 
@@ -258,6 +263,8 @@ app.post('/signup', function(req, res, next) {
 	var password = formData['password-form'];
 	var first = formData['first-name'];
 	var last = formData['last-name'];
+	var teacher = formData['teacher'];
+	var hour = formData['hour'];
 	var email = formData['email-input'];
 	var access = formData['access-code-input'];
 	
@@ -298,7 +305,7 @@ app.post('/signup', function(req, res, next) {
 			
 			//send form to be re-filled out
 			if(statuses['modified']) {
-				//console.log("Failure");
+				console.log("Failure");
 				
 				try {
 					var data = {
@@ -321,7 +328,7 @@ app.post('/signup', function(req, res, next) {
 					res.send(html);
 				
 				} catch(e) {
-					 //next(e);
+					 next(e);
 				}
 			}
 		
@@ -341,11 +348,11 @@ app.post('/signup', function(req, res, next) {
 				
 				//insert all info into People
 				var hashPass = require('crypto').createHash('md5').update(password).digest('hex');
-				var stmt = db.prepare("insert into People(username, password, first_name, last_name, email, permission)" +
-					"values (?,?,?,?,?,?);");
+				var stmt = db.prepare("insert into People(username, password, first_name, last_name, hour, teacher, email, permission)" +
+					"values (?,?,?,?,?,?,?,?);");
 				
-				stmt.all([username, hashPass, first, last, email, permission], function(err, rows) { 
-					
+				stmt.all([username, hashPass, first, last, hour, teacher, email, permission], function(err, rows) { 
+					if(err) { logErrors(err); }
 					db.all("select id from People where username = ?", [username], function(err, rows) {
 					//redirect to home page
 					try {
@@ -375,7 +382,7 @@ app.post('/signup', function(req, res, next) {
 						res.send(html);
 						
 					} catch (e) {
-						 //next(e)
+						 next(e)
 					}
 					});
 				});
@@ -413,7 +420,7 @@ app.get('/guest', function(req, res, next) {
 		res.send(html);
 			
 	} catch (e) {
-		 //next(e)
+		 next(e)
 	}
 });
 
@@ -445,7 +452,7 @@ app.post('/change-password', function(req, res, next) {
 			res.send(html);
 		
 		} catch(e) {
-			 //next(e);
+			 next(e);
 		}
 	}
 
@@ -470,7 +477,7 @@ app.post('/change-password', function(req, res, next) {
 					res.send(html);
 		
 				} catch(e) {
-					 //next(e);
+					 next(e);
 				}
 			}
 			
@@ -496,7 +503,7 @@ app.post('/change-password', function(req, res, next) {
 					res.send(html);
 		
 				} catch(e) {
-					 //next(e);
+					 next(e);
 				}
 			}
 		});
@@ -537,7 +544,7 @@ app.get('/logout', function(req, res, next) {
 		res.send(html);
 			
 	} catch (e) {
-		 //next(e)
+		 next(e)
 	}
 
 });
@@ -571,7 +578,7 @@ app.get('/Account/*', function(req, res, next) {
 
 		res.send(html);
 	} catch(e) {
-		 //next(e);
+		 next(e);
 	}
 });
 
@@ -608,7 +615,7 @@ app.get("/Announcements/*", function(req, res, next) {
 				res.send(html);
 		
 			} catch(e) {
-				 //next(e);
+				 next(e);
 			}
 		});
 	}
@@ -642,7 +649,7 @@ app.get("/Announcements/*", function(req, res, next) {
 				res.send(html);
 		
 			} catch(e) {
-				 //next(e);
+				 next(e);
 			}
 		});
 	}
@@ -698,7 +705,7 @@ app.post('/add-announcement', function(req, res, next) {
 					res.send(html);
 			
 				} catch(e) {
-					 //next(e);
+					 next(e);
 				}
 			});
 		}
@@ -730,7 +737,7 @@ app.post('/add-announcement', function(req, res, next) {
 					res.send(html);
 			
 				} catch(e) {
-					 //next(e);
+					 next(e);
 				}
 			});
 		
@@ -774,7 +781,7 @@ app.delete('/delete-announcements/*', function(req, res, next) {
 						res.send(html);
 				
 					} catch(e) {
-						 //next(e);
+						 next(e);
 					}
 				});
 			}
@@ -803,7 +810,7 @@ app.delete('/delete-announcements/*', function(req, res, next) {
 				res.send(html);
 		
 			} catch(e) {
-				 //next(e);
+				 next(e);
 			}
 		});
 	}
@@ -813,10 +820,13 @@ app.delete('/delete-announcements/*', function(req, res, next) {
 app.get('/Documents', function(req, res, next) {
 	var cookies = cookie.parse(req.headers.cookie || '');
 
-	var sql = "select Documents.id, Documents.date, Documents.assignment_name, \
-			   Documents.path, Documents.original_name, Documents.link_path, \
-			   People.first_name, People.last_name \
-			   from Documents join People on Documents.person = People.id \
+	var sql = "select Documents.id as id, Documents.date as date, Documents.assignment_name as assignment_name, \
+			   Documents.link_path as link_path, \
+			   Person.first as first_name, Person.last as last_name, Person.hour as hour, Person.teach as teacher \
+			   from Documents join \
+			   (select Student.id as id, Student.hour as hour, Student.first_name as first, Student.last_name as last, Teacher.last_name as teach \
+			   from People as Student join People as Teacher on Student.teacher = Teacher.id) as Person \
+			   on Documents.person = Person.id \
 			   order by Documents.date desc;";
 	
 	db.all(sql, function(err, rows) { 
@@ -837,33 +847,40 @@ app.get('/Documents', function(req, res, next) {
 			res.send(html);
 
 		} catch(e) {
-			 //next(e);
+			 next(e);
 		}
 	});
 
 });
 
 //handle upload of document
-app.post('/documents-upload', upload.single('file'), function(req, res, next) {
+//app.post('/documents-upload', upload.single('file'), function(req, res, next) {
+app.post('/documents-upload', function(req, res, next) {
 	var cookies = cookie.parse(req.headers.cookie || '');
 	
 	var formData = req.body;
-	var file = req.file;
-	var link = "/uploads/" + cookies.id + "/" + file.originalname;
+	console.log(formData);
+	//var file = req.file;
+	//var link = "/uploads/" + cookies.id + "/" + file.originalname;
+	var link = formData['url'];
+	var assignment = formData['doc-assignment-name'];
 	
 	db.serialize(function() {
-	//Documents(id, person, date, assignment_name, path, original_name, link_path)
-	db.run("insert into Documents values(?,?, datetime('now', 'localtime'),?,?,?,?)", 
-		[null, cookies.id, formData['assignment'], file.path, file.originalname, link],
+	//Documents(id, person, date, assignment_name, link_path)
+	db.run("insert into Documents(id, person, date, assignment_name, link_path) values(?,?, datetime('now', 'localtime'),?,?)", 
+		[null, cookies.id, assignment, link],
 		function(err) {
 			if(err) { logErrors(err); }
 		}
 	);
 	
-	var sql = "select Documents.id, Documents.date, Documents.assignment_name, \
-			   Documents.path, Documents.original_name, Documents.link_path, \
-			   People.first_name, People.last_name \
-			   from Documents join People on Documents.person = People.id \
+	var sql = "select Documents.id as id, Documents.date as date, Documents.assignment_name as assignment_name, \
+			   Documents.link_path as link_path, \
+			   Person.first as first_name, Person.last as last_name, Person.hour as hour, Person.teach as teacher \
+			   from Documents join \
+			   (select Student.id as id, Student.hour as hour, Student.first_name as first, Student.last_name as last, Teacher.last_name as teach \
+			   from People as Student join People as Teacher on Student.teacher = Teacher.id) as Person \
+			   on Documents.person = Person.id \
 			   order by Documents.date desc;";
 			   
 	db.all(sql, function(err, rows) { 
@@ -884,7 +901,7 @@ app.post('/documents-upload', upload.single('file'), function(req, res, next) {
 			res.send(html);
 
 		} catch(e) {
-			 //next(e);
+			 next(e);
 		}
 	});
 	
@@ -897,44 +914,65 @@ app.post('/Documents/filter', function(req, res, next) {
 	var cookies = cookie.parse(req.headers.cookie || '');
 	var formData = req.body;
 	
-	var first = formData['first-name'];
-	var last = formData['last-name'];
-	var assignment = formData['assignment-name'];
+	var sql = "select Documents.id as id, Documents.date as date, Documents.assignment_name as assignment_name, \
+			   Documents.link_path as link_path, \
+			   Person.first as first_name, Person.last as last_name, Person.hour as hour, Person.teach as teacher \
+			   from Documents join \
+			   (select Student.id as id, Student.hour as hour, Student.first_name as first, Student.last_name as last, Teacher.last_name as teach \
+			   from People as Student join People as Teacher on Student.teacher = Teacher.id) as Person \
+			   on Documents.person = Person.id"
 	
-	var args = []; //will hold the arguments to fill in "?" in sql statement
-	var sql = "select Documents.id, Documents.date, Documents.assignment_name, \
-			   Documents.path, Documents.original_name, Documents.link_path, \
-			   People.first_name, People.last_name \
-			   from Documents join People on Documents.person = People.id";
+	var args = []; //holds argument to pass to db.all(sql, args, function)
 	
-	//if any of the fields is filled, we add a where clause
-	if(first || last || assignment) {
-		sql = sql + " where ";
+	var length = 0; //# of non-empty args
+	for(var value in formData) {
+		if(formData.hasOwnProperty(value)) {
+			if(formData[value] != '') {
+				length += 1;
+			}
+		}
 	}
 	
-	if(first) {
-		sql = sql + "People.first_name like ?";
-		args.push("%" + first + "%");
-	}
+	//if search has any parameters we add where clause, otherwise just resend all books
+	if(length > 0) {
+		sql = sql + " where "
 	
-	//check if either of the other two is filled, and add "and"
-	if((last ||  assignment) && first) {
-		sql = sql + " and ";
-	}
-	
-	if(last) {
-		sql = sql + "People.last_name like ?";
-		args.push("%" + last + "%");
-	}
-	
-	//if there's a field other than assignment, we need an "and"
-	if(last && assignment) {
-		sql = sql + ' and ';
-	}
-	
-	if(assignment) {
-		sql = sql + "Documents.assignment_name like ?";
-		args.push("%" + assignment + "%");
+		for(var value in formData) {
+			if(formData.hasOwnProperty(value)) {
+				if(formData[value] != '') {
+					if(value == 'first-name') {
+						sql = sql + "Person.first like ?";
+						args.push("%" + formData['first-name'] + "%");
+					}
+					
+					else if(value == 'last-name') {
+						sql = sql + "Person.last like ?";
+						args.push("%" + formData['last-name'] + "%");
+					}
+					
+					else if(value == 'assignment-name') {
+						sql = sql + "Documents.assignment_name like ?";
+						args.push("%" + formData['assignment-name'] + "%");
+					}
+					
+					else if(value == 'teacher') {
+						sql = sql + "Person.teach like ?";
+						args.push("%" + formData['teacher'] + "%");
+					}
+					
+					else if(value == 'hour') {
+						sql = sql + "Person.hour = ?";
+						args.push(formData['hour']);
+					}
+					
+					//add in "and" between where clause statements
+					if(length > 1) {
+						sql = sql + " and ";
+						length--;
+					}
+				}
+			}
+		}
 	}
 	
 	sql = sql + " order by Documents.date desc;";
@@ -959,7 +997,7 @@ app.post('/Documents/filter', function(req, res, next) {
 			res.send(html);
 
 		} catch(e) {
-			 //next(e);
+			 next(e);
 		}
 	});
 });
@@ -996,10 +1034,13 @@ app.delete('/Documents/*', function(req, res, next) {
 			
 			//no errors = send updated page
 			else {
-				var sql = "select Documents.id, Documents.date, Documents.assignment_name, \
-				   Documents.path, Documents.original_name, Documents.link_path, \
-				   People.first_name, People.last_name \
-				   from Documents join People on Documents.person = People.id \
+				var sql = "select Documents.id as id, Documents.date as date, Documents.assignment_name as assignment_name, \
+				   Documents.link_path as link_path, \
+				   Person.first as first_name, Person.last as last_name, Person.hour as hour, Person.teach as teacher \
+				   from Documents join \
+				   (select Student.id as id, Student.hour as hour, Student.first_name as first, Student.last_name as last, Teacher.last_name as teach \
+				   from People as Student join People as Teacher on Student.teacher = Teacher.id) as Person \
+				   on Documents.person = Person.id \
 				   order by Documents.date desc;";
 				   
 				db.all(sql, function(err, rows) { 
@@ -1020,7 +1061,7 @@ app.delete('/Documents/*', function(req, res, next) {
 						res.send(html);
 
 					} catch(e) {
-						 //next(e);
+						 next(e);
 					}
 				});
 			}
@@ -1031,11 +1072,14 @@ app.delete('/Documents/*', function(req, res, next) {
 	}
 	
 	else {
-		var sql = "select Documents.id, Documents.date, Documents.assignment_name, \
-		   Documents.path, Documents.original_name, Documents.link_path, \
-		   People.first_name, People.last_name \
-		   from Documents join People on Documents.person = People.id \
-		   order by Documents.date desc;";
+		var sql = "select Documents.id as id, Documents.date as date, Documents.assignment_name as assignment_name, \
+			   Documents.link_path as link_path, \
+			   Person.first as first_name, Person.last as last_name, Person.hour as hour, Person.teach as teacher \
+			   from Documents join \
+			   (select Student.id as id, Student.hour as hour, Student.first_name as first, Student.last_name as last, Teacher.last_name as teach \
+			   from People as Student join People as Teacher on Student.teacher = Teacher.id) as Person \
+			   on Documents.person = Person.id \
+			   order by Documents.date desc;";
 		   
 		db.all(sql, function(err, rows) { 
 			if(err) {
@@ -1055,7 +1099,7 @@ app.delete('/Documents/*', function(req, res, next) {
 				res.send(html);
 
 			} catch(e) {
-				//next(e);
+				next(e);
 			}
 		});
 	}
@@ -1088,7 +1132,7 @@ app.get('/Books', function(req, res, next) {
 			res.send(html);
 			
 		} catch(e) {
-			//next(e)
+			next(e)
 		}
 	
 	});
@@ -1178,7 +1222,7 @@ app.post('/Books/filter', function(req, res, next) {
 			res.send(html);
 			
 		} catch(e) {
-			 //next(e)
+			 next(e)
 		}
 	
 	});
@@ -1239,6 +1283,35 @@ app.post('/add-review', function(req, res, next) {
 					);
 				});
 				
+				var sql = "select Books.id, Books.title, Books.author_first, Books.author_last, Books.genre, \
+				round(avg(Reviews.score), 2) as average \
+				from Books join Reviews on Books.id = Reviews.book \
+				group by Books.title \
+				order by average asc;"
+				   
+				db.all(sql, function(err, rows) {
+					if(err) { logErrors(err); }
+					status = "Success";
+					try {
+						var data = {
+							titleString: "Books",
+							view: cookies.view,
+							greetingName: cookies.name,
+							
+							books: rows,
+							addReviewStatus: status
+						}
+						
+						var html = template.renderFile(__dirname + "/static/books.jade", data);
+						
+						res.send(html);
+						
+					} catch(e) {
+						 next(e)
+					}
+				
+				});
+				
 			
 			}); //end db.serialize	
 		}
@@ -1259,37 +1332,37 @@ app.post('/add-review', function(req, res, next) {
 						}
 					);
 			});
-		}
-	});
-	
-	//send page data
-	var sql = "select Books.id, Books.title, Books.author_first, Books.author_last, Books.genre, \
-		   round(avg(Reviews.score), 2) as average \
-		   from Books join Reviews on Books.id = Reviews.book \
-		   group by Books.title \
-		   order by average asc;"
+			
+			//send page data
+			var sql = "select Books.id, Books.title, Books.author_first, Books.author_last, Books.genre, \
+			round(avg(Reviews.score), 2) as average \
+			from Books join Reviews on Books.id = Reviews.book \
+			group by Books.title \
+			order by average asc;"
 			   
-	db.all(sql, function(err, rows) {
-		if(err) { logErrors(err); }
-		status = "Success";
-		try {
-			var data = {
-				titleString: "Books",
-				view: cookies.view,
-				greetingName: cookies.name,
-				
-				books: rows,
-				addReviewStatus: status
-			}
+			db.all(sql, function(err, rows) {
+				if(err) { logErrors(err); }
+				status = "Success";
+				try {
+					var data = {
+						titleString: "Books",
+						view: cookies.view,
+						greetingName: cookies.name,
+						
+						books: rows,
+						addReviewStatus: status
+					}
+					
+					var html = template.renderFile(__dirname + "/static/books.jade", data);
+					
+					res.send(html);
+					
+				} catch(e) {
+					 next(e)
+				}
 			
-			var html = template.renderFile(__dirname + "/static/books.jade", data);
-			
-			res.send(html);
-			
-		} catch(e) {
-			 //next(e)
+			});
 		}
-	
 	});
 	
 	}); //end outer db.serialize
@@ -1392,7 +1465,141 @@ app.get('/Books/*', function(req, res, next) {
 
 });
 
-//get a particular review (linked from book page
+//get Reviews as list of all reviews for all books
+app.get('/Reviews', function(req, res, next) {
+	var cookies = cookie.parse(req.headers.cookie || '');
+	
+	var sql = "select Person.first as first, Person.last as last, Person.teacher as teacher, \
+			   Person.hour as hour, \
+			   Reviews.id as rid, Reviews.date as date, \
+			   Books.title as title, Books.id as bid \
+			   from (select Student.id as pid, Student.first_name as first, Student.last_name as last, \
+			   Student.hour as hour, Teacher.last_name as teacher \
+			   from People as Student join People as Teacher on Student.teacher = Teacher.id) as Person \
+			   join (Reviews join Books on Reviews.book = Books.id) \
+			   on Person.pid = Reviews.writer \
+			   order by Reviews.date desc";
+			   
+	db.all(sql, function(err, rows) {
+		if(err) { logErrors(err); }
+		
+		try {
+			var data = {
+				titleString: "Reviews",
+				view: cookies.view,
+				greetingName: cookies.name,
+				
+				reviews: rows
+			}
+		
+			var html = template.renderFile(__dirname + "/static/listreviews.jade", data);
+			
+			res.send(html);
+		} catch(e) {
+			next(e);
+		}
+	});
+
+});
+
+//filter out reviews
+app.post('/reviews-filter', function(req, res, next) {
+	var cookies = cookie.parse(req.headers.cookie || '');
+	var formData = req.body;
+
+	var sql = "select Person.first as first, Person.last as last, Person.teacher as teacher, \
+			   Person.hour as hour, \
+			   Reviews.id as rid, Reviews.date as date, \
+			   Books.title as title, Books.id as bid \
+			   from (select Student.id as pid, Student.first_name as first, Student.last_name as last, \
+			   Student.hour as hour, Teacher.last_name as teacher \
+			   from People as Student join People as Teacher on Student.teacher = Teacher.id) as Person \
+			   join (Reviews join Books on Reviews.book = Books.id) \
+			   on Person.pid = Reviews.writer";
+		   
+	var args = []; //holds argument to pass to db.all(sql, args, function)
+	
+	var length = 0; //# of non-empty args
+	for(var value in formData) {
+		if(formData.hasOwnProperty(value)) {
+			if(formData[value] != '') {
+				length += 1;
+			}
+		}
+	}
+	
+	//if search has any parameters we add where clause, otherwise just resend all books
+	if(length > 0) {
+		sql = sql + " where "
+	
+		for(var value in formData) {
+			if(formData.hasOwnProperty(value)) {
+				if(formData[value] != '') {
+					if(value == 'book-title') {
+						sql = sql + "Books.title like ?";
+						args.push("%" + formData['book-title'] + "%");
+					}
+					
+					else if(value == 'first-name') {
+						sql = sql + "Person.first like ?";
+						args.push("%" + formData['first-name'] + "%");
+					}
+					
+					else if(value == 'last-name') {
+						sql = sql + "Person.last like ?";
+						args.push("%" + formData['last-name'] + "%");
+					}
+					
+					else if(value == 'teacher') {
+						sql = sql + "Person.teacher like ?";
+						args.push("%" + formData['teacher'] + "%");
+					}
+					
+					else if(value == 'hour') {
+						sql = sql + "Person.hour = ?";
+						args.push(formData['hour']);
+					}
+					
+					//add in "and" between where clause statements
+					if(length > 1) {
+						sql = sql + " and ";
+						length--;
+					}
+				}
+			}
+		}
+	}
+		   
+	sql = sql + " order by Reviews.date desc;";
+	
+	var stmt = db.prepare(sql);
+	
+	stmt.all(args, function(err, rows) {
+	
+		if(err) { logErrors(err) }
+		
+		try {
+			var data = {
+				titleString: "Reviews",
+				view: cookies.view,
+				greetingName: cookies.name,
+				
+				reviews: rows
+			}
+			
+			var html = template.renderFile(__dirname + "/static/reviewslist.jade", data);
+			
+			res.send(html);
+			
+		} catch(e) {
+			 next(e)
+		}
+	
+	});
+
+});
+
+//get a particular review (linked from book page)
 app.get('/Reviews/*', function(req, res, next) {
 	var cookies = cookie.parse(req.headers.cookie || '');
 	var reviewId = req.params[0];
@@ -1422,7 +1629,7 @@ app.get('/Reviews/*', function(req, res, next) {
 			
 				res.send(html);
 			} catch(e) {
-				//next(e);
+				next(e);
 			}
 		});
 	});
@@ -1450,7 +1657,7 @@ app.get('/CourseLinks', function(req, res, next) {
 				res.send(html);
 			
 			} catch(e) {
-				 //next(e);
+				 next(e);
 			}
 		}
 	});
@@ -1498,7 +1705,7 @@ app.post('/addlink-form', function(req, res, next) {
 				res.send(html);
 		
 			} catch(e) {
-				 //next(e);
+				 next(e);
 			}
 		});
 	}
@@ -1541,7 +1748,7 @@ app.post('/addlink-form', function(req, res, next) {
 						res.send(html);
 				
 					} catch(e) {
-						 //next(e);
+						 next(e);
 					}
 				});
 			}
@@ -1567,7 +1774,7 @@ app.post('/addlink-form', function(req, res, next) {
 						res.send(html);
 				
 					} catch(e) {
-						 //next(e);
+						 next(e);
 					}
 				});
 			}
@@ -1607,7 +1814,7 @@ app.delete('/CourseLinks/*', function(req, res, next) {
 						res.send(html);
 				
 					} catch(e) {
-						 //next(e);
+						 next(e);
 					}
 				});
 			}
@@ -1634,7 +1841,7 @@ app.delete('/CourseLinks/*', function(req, res, next) {
 				res.send(html);
 		
 			} catch(e) {
-				 //next(e);
+				 next(e);
 			}
 		});
 	}
@@ -1676,7 +1883,7 @@ app.post('/UpdateLink/*', function(req, res, next) {
 					res.send(html);
 			
 				} catch(e) {
-					 //next(e);
+					 next(e);
 				}
 			});
 		}
@@ -1714,7 +1921,7 @@ app.post('/change-admin-key', function(req, res, next) {
 			res.send(html);
 		
 		} catch(e) {
-			 //next(e);
+			 next(e);
 		}
 	}
 
@@ -1737,7 +1944,7 @@ app.post('/change-admin-key', function(req, res, next) {
 					res.send(html);
 		
 				} catch(e) {
-					 //next(e);
+					 next(e);
 				}
 			}
 			
@@ -1763,7 +1970,7 @@ app.post('/change-admin-key', function(req, res, next) {
 					res.send(html);
 		
 				} catch(e) {
-					 //next(e);
+					 next(e);
 				}
 			}
 		});
@@ -1797,7 +2004,7 @@ app.post('/change-student-key', function(req, res, next) {
 			res.send(html);
 		
 		} catch(e) {
-			 //next(e);
+			 next(e);
 		}
 	}
 
@@ -1820,7 +2027,7 @@ app.post('/change-student-key', function(req, res, next) {
 					res.send(html);
 		
 				} catch(e) {
-					 //next(e);
+					 next(e);
 				}
 			}
 			
@@ -1846,7 +2053,7 @@ app.post('/change-student-key', function(req, res, next) {
 					res.send(html);
 		
 				} catch(e) {
-					 //next(e);
+					 next(e);
 				}
 			}
 		});
@@ -1892,7 +2099,7 @@ app.post('/database/sql', function(req, res, next) {
 
 					res.send(html);
 				} catch(e) {
-					 //next(e);
+					 next(e);
 				}
 			}
 			
@@ -1911,7 +2118,7 @@ app.post('/database/sql', function(req, res, next) {
 
 					res.send(html);
 				} catch(e) {
-					 //next(e);
+					 next(e);
 				}
 			
 			}
@@ -1940,7 +2147,7 @@ app.post('/database/clear-students', function(req, res, next) {
 
 			res.send(html);
 		} catch(e) {
-			 //next(e);
+			 next(e);
 		}
 	}
 

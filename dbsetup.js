@@ -1,12 +1,14 @@
 module.exports = {
 
 	setup: function(db) {
-		//People(id, username, password, first_name, last_name, email, permission)
+		//People(id, username, password, first_name, last_name, hour, teacher, email, permission)
 		db.run("create table if not exists People (" +
 				"id integer primary key autoincrement," +
 				"username varchar(50) not null unique, password varchar(50) not null," +
 				"first_name varchar(50) not null, last_name varchar(50) not null," + 
-				"email varchar(50), permission varchar(20) not null" +
+				"hour integer not null, teacher integer default -1 not null," +
+				"email varchar(50), permission varchar(20) not null," +
+				"foreign key(teacher) references People(id) on update cascade on delete set default" +
 				");"
 				, [], function(err) {
 					//console.log(err);
@@ -58,7 +60,8 @@ module.exports = {
 		db.run("create table if not exists Documents (" +
 				"id integer primary key autoincrement," +
 				"person integer not null, date text not null, assignment_name varchar(50) default 'Unspecified'," +
-				"path varchar(100) not null, original_name varchar(100), link_path varchar(100)," +
+				//"path varchar(100) not null, original_name varchar(100), 
+				"link_path varchar(100)," +
 				"foreign key(person) references People(id) on delete cascade on update cascade" +
 				");"
 				, [], function(err) {
@@ -142,14 +145,29 @@ module.exports = {
 			console.log(err);
 			console.log(rows);
 		});
-		
-		db.all("select * from Reviews", [], function(err, rows) {
+		db.all("select * from People", [], function(err, rows) {
 			//console.log("Links");
 			console.log(err);
 			console.log(rows);
 		});
+		var sql = "select Person.first as first, Person.last as last, Person.teacher as teacher, \
+			   Person.hour as hour, \
+			   Reviews.id as rid, Reviews.date as date, \
+			   Books.title as title, Books.id as bid \
+			   from (select Student.first_name as first, Student.last_name as last, \
+			   Student.hour as hour, Teacher.last_name as teacher \
+			   from People as Student join People as Teacher on Student.teacher = Teacher.id) as Person \
+			   join (Reviews join Books on Reviews.book = Books.id) \
+			   order by Reviews.date desc";
+		db.all(sql, function(err, rows) {
+			console.log(err);
+			console.log(rows);
+		}); 
+		db.all("select * from Reviews", function(err, rows) {
+			//console.log(err);
+			console.log(rows);
+		});
 		*/
-		
 	},
 	
 	//used to start new year with new students
@@ -221,15 +239,22 @@ module.exports = {
 		
 		eval(module.exports.setup(db));
 		
+		//People(id, username, pass, first, last, hour, teacher, email, permission)
 		db.run("insert into People values(null, 'Webmaster', 'eb0a191797624dd3a48fa681d3061212', \
-			    'Web', 'Master', '', 'admin');", function(err) {
+			    'Web', 'Master', 1, 1, '', 'admin');", function(err) {
+			
+			if(err) { console.log(err); }
+		});
+		
+		db.run("insert into People values(null, 'Teacher', 'eb0a191797624dd3a48fa681d3061212', \
+			    'Mr.', 'Teacher', 1, 2, '', 'admin');", function(err) {
 			
 			if(err) { console.log(err); }
 		});
 		
 		//enter Anonymous as a person to make reviews work correctly
 		db.run("insert into People values(-1, 'Anonymous', 'eb0a191797624dd3a48fa681d3061212', \
-			    'Anonymous', 'User', '', 'student');", function(err) {
+			    'Anonymous', 'User', 1, -1, '', 'student');", function(err) {
 			
 			if(err) { console.log(err); }
 		});

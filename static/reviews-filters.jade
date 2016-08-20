@@ -1,0 +1,61 @@
+div(id="review-filters-div")
+	form(id="review-filters-form")
+			fieldset
+				legend Search
+				
+				label(class="filters-label")
+					strong Name
+				input(id="filters-first" name="first-name" type="text" size="30" placeholder="First Name")
+				input(id="filters-last" name="last-name" type="text" size="30" placeholder="Last Name")
+				
+				br
+				label(class="filters-label")
+					strong Book
+				input(id="filters-book" name="book-title" type="text" size="30" placeholder="Title")
+				
+				br
+				label(class="filters-label")
+					strong Teacher
+				input(id="filters-teacher" name="teacher" type="text" size="30" placeholder="Teacher")
+				
+				br
+				label(class="filters-label")
+					strong Hour
+				select(id="score-filter" name="hour")
+						option(value="") -
+						option(value="1") 1
+						option(value="2") 2
+						option(value="3") 3
+						option(value="4") 4
+						option(value="5") 5
+						option(value="6") 6
+						option(value="7") 7
+						option(value="8") 8
+				
+				br
+				input(id="review-filters-submit" class="input-button search-button" type="submit" value="Search")
+			
+		script.
+			$(document).ready(function() {
+			
+				//-add form submit as ajax call
+				$("#review-filters-form").submit(function(e) {
+					e.preventDefault();
+				
+					var inputs = $("#review-filters-form :input");
+					
+					$.ajax({
+						url: "/reviews-filter",
+						type: "POST",
+						dataType: "html",
+						
+						data: inputs,
+						
+						success: function(data) {
+							$("#reviewslist-content").html(data);
+						}
+					
+					});
+				});
+			
+			}); //end document.ready
