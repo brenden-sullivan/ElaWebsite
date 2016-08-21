@@ -2088,14 +2088,14 @@ app.post('/database/sql', function(req, res, next) {
 				
 				try {
 					var data = {
-						titleString: 'Profile',
+						titleString: 'Account',
 						view: cookies.permission,
 						greetingName: cookies.name,
 						
 						sqlStatus: err
 					}
 					
-					var html = template.renderFile(__dirname + '/static/profile.jade', data);
+					var html = template.renderFile(__dirname + '/static/account.jade', data);
 
 					res.send(html);
 				} catch(e) {
@@ -2107,14 +2107,14 @@ app.post('/database/sql', function(req, res, next) {
 			else {
 				try {
 					var data = {
-						titleString: 'Profile',
+						titleString: 'Account',
 						view: cookies.permission,
 						greetingName: cookies.name,
 						
 						sqlStatus: "Success"
 					}
 					
-					var html = template.renderFile(__dirname + '/static/profile.jade', data);
+					var html = template.renderFile(__dirname + '/static/account.jade', data);
 
 					res.send(html);
 				} catch(e) {
@@ -2136,14 +2136,14 @@ app.post('/database/clear-students', function(req, res, next) {
 		
 		try {
 			var data = {
-				titleString: 'Profile',
+				titleString: 'Account',
 				view: cookies.permission,
 				greetingName: cookies.name,
 				
 				clearStudentStatus: "Success"
 			}
 			
-			var html = template.renderFile(__dirname + '/static/profile.jade', data);
+			var html = template.renderFile(__dirname + '/static/account.jade', data);
 
 			res.send(html);
 		} catch(e) {
