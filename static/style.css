@@ -128,6 +128,7 @@ label {
 	width: 100%;
 	
 	border: 1px solid #dddddd;
+	border-radius: 5px;
 }
 
 .announcement-div h2 {
@@ -148,6 +149,7 @@ label {
 	width: 100%;
 	
 	border: 1px solid #dddddd;
+	border-radius: 5px;
 }
 
 .course-link h2 {
