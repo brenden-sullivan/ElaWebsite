@@ -589,7 +589,7 @@ app.get("/Announcements/*", function(req, res, next) {
 	
 	//case where we want all announcements
 	if(id == "all") {
-		sql = "select Announcements.id, Announcements.date, Announcements.title \
+		sql = "select Announcements.id, Announcements.date, Announcements.title, \
 				   Announcements.content, People.first_name, People.last_name \
 				   from Announcements join People on Announcements.poster = People.id \
 				   order by Announcements.date desc \

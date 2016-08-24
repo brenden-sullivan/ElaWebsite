@@ -246,11 +246,13 @@ module.exports = {
 			if(err) { console.log(err); }
 		});
 		
+		/*
 		db.run("insert into People values(null, 'Teacher', 'eb0a191797624dd3a48fa681d3061212', \
 			    'Mr.', 'Teacher', 1, 2, '', 'admin');", function(err) {
 			
 			if(err) { console.log(err); }
 		});
+		*/
 		
 		//enter Anonymous as a person to make reviews work correctly
 		db.run("insert into People values(-1, 'Anonymous', 'eb0a191797624dd3a48fa681d3061212', \
