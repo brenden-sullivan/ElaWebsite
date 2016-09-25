@@ -163,11 +163,12 @@ module.exports = {
 			console.log(err);
 			console.log(rows);
 		}); 
-		db.all("select * from Reviews", function(err, rows) {
+		*/
+		db.all("select * from People where permission = 'admin'", function(err, rows) {
 			//console.log(err);
 			console.log(rows);
 		});
-		*/
+		
 	},
 	
 	//used to start new year with new students
