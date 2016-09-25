@@ -162,12 +162,12 @@ module.exports = {
 		db.all(sql, function(err, rows) {
 			console.log(err);
 			console.log(rows);
-		}); 
-		*/
+		});
 		db.all("select * from People where permission = 'admin'", function(err, rows) {
 			//console.log(err);
 			console.log(rows);
 		});
+		/*
 		
 	},
 	
