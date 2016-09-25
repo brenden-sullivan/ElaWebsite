@@ -2082,7 +2082,7 @@ app.post('/database/sql', function(req, res, next) {
 	//only do this if the request comes from admin
 	if(cookies.permission == 'admin') {
 		//attempt to run the sql provided
-		db.run(sql, function(err) {
+		db.all(sql, function(err, rows) {
 			//if err reload the page with status message of the error
 			if(err) {
 				logErrors(err);
@@ -2106,6 +2106,8 @@ app.post('/database/sql', function(req, res, next) {
 			
 			//else reload with status of success
 			else {
+				console.log(rows);
+				
 				try {
 					var data = {
 						titleString: 'Account',
