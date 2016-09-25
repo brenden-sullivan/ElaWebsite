@@ -167,7 +167,7 @@ module.exports = {
 			//console.log(err);
 			console.log(rows);
 		});
-		/*
+		*/
 		
 	},
 	
