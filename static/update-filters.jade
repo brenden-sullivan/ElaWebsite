@@ -1,0 +1,62 @@
+if(view == 'admin')
+	div(id="update-filters-div")
+		form(id="update-filters-form")
+			fieldset
+				legend Search
+				
+				label(class="filters-label")
+					strong Name
+				input(id="update-filters-first" name="first-name" type="text" size="30" placeholder="First Name")
+				input(id="update-filters-last" name="last-name" type="text" size="30" placeholder="Last Name")
+				
+				br
+				label(class="filters-label")
+					strong Username
+				input(id="update-filters-assign" name="username" type="text" size="30" placeholder="Username")
+				
+				br
+				label(class="filters-label")
+					strong Teacher
+				input(id="update-filters-assign" name="teacher" type="text" size="30" placeholder="Teacher")
+				
+				br
+				label(class="filters-label")
+					strong Hour
+				select(id="score-filter" name="hour")
+						option(value="") -
+						option(value="1") 1
+						option(value="2") 2
+						option(value="3") 3
+						option(value="4") 4
+						option(value="5") 5
+						option(value="6") 6
+						option(value="7") 7
+						option(value="8") 8
+				
+				br
+				input(id="update-filters-submit" class="input-button search-button" type="submit" value="Search")
+			
+		script.
+			$(document).ready(function() {
+			
+				//-add form submit as ajax call
+				$("#update-filters-form").submit(function(e) {
+					e.preventDefault();
+				
+					var inputs = $("#update-filters-form :input");
+					
+					$.ajax({
+						url: "/Updates/filter",
+						type: "POST",
+						dataType: "html",
+						
+						data: inputs,
+						
+						success: function(data) {
+							$("#updates-content").html(data);
+						}
+					
+					});
+				});
+			
+			}); //end document.ready

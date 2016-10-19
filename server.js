@@ -1895,6 +1895,207 @@ app.post('/UpdateLink/*', function(req, res, next) {
 /**********************************************************
 * Admin tools
 ***********************************************************/
+//admin only page for updating student hour, name, teacher, and reset password
+app.get('/UpdateStudents', function(req, res, next) {
+	var cookies = cookie.parse(req.headers.cookie || '');
+
+	try {
+		var data = {
+			titleString: "Update Students",
+			
+			view: cookies.view,
+			greetingName: cookies.name,
+			
+			students: [],
+			
+			status: "Find Student",
+		}
+		
+		var html = template.renderFile(__dirname + "/static/updatestudents.jade", data);
+
+		res.send(html);
+	
+	} catch(e) {
+		 next(e);
+	}
+});
+
+//update the student with values from form
+app.post('/UpdateStudents/*', function(req, res, next) {
+	var cookies = cookie.parse(req.headers.cookie || '');
+	var id = req.params[0];
+	
+	var formData = req.body;
+	
+	var first = formData['first-name'];
+	var last = formData['last-name'];
+	var username = formData['username'];
+	var teacher = formData['teacher'];
+	var hour = formData['hour'];
+	
+	if(cookies.permission == 'admin') {
+	
+		db.run("update People set first_name = ?, last_name = ?, teacher = ?, hour = ? where id = ?", 
+			[first, last, teacher, hour, id],
+			function(err) {
+				if(err) { logErrors(err) }
+				
+				else {
+					try {
+						var data = {
+							titleString: "Update Students",
+							
+							view: cookies.view,
+							greetingName: cookies.name,
+							
+							students: [],
+							
+							status: "Success",
+						}
+						
+						var html = template.renderFile(__dirname + "/static/updatestudents.jade", data);
+
+						res.send(html);
+					
+					} catch(e) {
+						 next(e);
+					}
+				}
+			});
+	}
+
+});
+
+//filter students to update
+app.post('/Updates/filter', function(req, res, next) {
+	var cookies = cookie.parse(req.headers.cookie || '');
+	var formData = req.body;
+
+	var sql = "select id, username, first_name as fname, last_name as lname, teacher, hour \
+				from People";
+		   
+	var args = []; //holds argument to pass to db.all(sql, args, function)
+	
+	var length = 0; //# of non-empty args
+	for(var value in formData) {
+		if(formData.hasOwnProperty(value)) {
+			if(formData[value] != '') {
+				length += 1;
+			}
+		}
+	}
+	
+	//if search has any parameters we add where clause, otherwise just resend all books
+	if(length > 0) {
+		sql = sql + " where "
+	
+		for(var value in formData) {
+			if(formData.hasOwnProperty(value)) {
+				if(formData[value] != '') {
+					if(value == 'username') {
+						sql = sql + "username like ?";
+						args.push("%" + formData['username'] + "%");
+					}
+					
+					else if(value == 'first-name') {
+						sql = sql + "first_name like ?";
+						args.push("%" + formData['first-name'] + "%");
+					}
+					
+					else if(value == 'last-name') {
+						sql = sql + "last_name like ?";
+						args.push("%" + formData['last-name'] + "%");
+					}
+					
+					else if(value == 'teacher') {
+						sql = sql + "teacher like ?";
+						args.push("%" + formData['teacher'] + "%");
+					}
+					
+					else if(value == 'hour') {
+						sql = sql + "hour = ?";
+						args.push(formData['hour']);
+					}
+					
+					//add in "and" between where clause statements
+					if(length > 1) {
+						sql = sql + " and ";
+						length--;
+					}
+				}
+			}
+		}
+	}
+		   
+	sql = sql + " order by last_name;";
+	
+	var stmt = db.prepare(sql);
+	
+	stmt.all(args, function(err, rows) {
+	
+		if(err) { logErrors(err) }
+		
+		else {
+			try {
+				var data = {
+					titleString: "Update Students",
+					view: cookies.view,
+					greetingName: cookies.name,
+					
+					students: rows
+				}
+				
+				var html = template.renderFile(__dirname + "/static/studentinfo.jade", data);
+				
+				res.send(html);
+				
+			} catch(e) {
+				 next(e)
+			}
+		}
+	
+	});
+
+});
+
+//reset the students password to "password"
+app.post('/ResetPassword/*', function(req, res, next) {
+	var cookies = cookie.parse(req.headers.cookie || '');
+	var id = req.params[0];
+	
+	var defaultPass = '5f4dcc3b5aa765d61d8327deb882cf99'; //"password"
+	
+	if(cookies.permission == 'admin') {
+		db.run("update People set password = ? where id = ?", [defaultPass, id],
+			function(err) {
+				if(err) { logErrors(err) }
+				
+				else {
+					try {
+						var data = {
+							titleString: "Update Students",
+							
+							view: cookies.view,
+							greetingName: cookies.name,
+							
+							students: [],
+							
+							status: "Success",
+						}
+						
+						var html = template.renderFile(__dirname + "/static/updatestudents.jade", data);
+
+						res.send(html);
+					
+					} catch(e) {
+						 next(e);
+					}
+				}
+			});
+	}
+
+});
+
 //handle admin key change
 app.post('/change-admin-key', function(req, res, next) {
 	var cookies = cookie.parse(req.headers.cookie || '');

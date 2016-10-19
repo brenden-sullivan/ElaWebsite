@@ -1,0 +1,87 @@
+mixin updateForm(data)
+	-formId = data.id + "-update-form"
+	-formAction = "/UpdateStudents/" + data.id
+	form(id=formId method="POST" action=formAction)
+		fieldset
+			-first = data.fname
+			-last = data.lname
+			-username = data.username
+			-teacher = data.teacher
+			-hour = data.hour
+		
+			label(class="filters-label")
+				strong Name
+			input(id="update-first" name="first-name" type="text" size="30" value=first)
+			input(id="update-last" name="last-name" type="text" size="30" value=last)
+			
+			br
+			label(class="filters-label")
+				strong Username
+			input(id="update-filters-assign" name="update-username" type="text" size="30" value=username disabled)
+			
+			br
+			label(class="filters-label")
+				strong Teacher (Libert should be 9, Sullivan should be 3)
+			input(id="update-filters-assign" name="teacher" type="text" size="30" value=teacher)
+			
+			br
+			label(class="filters-label")
+				strong Hour
+			select(id="score-filter" name="hour")
+					option(value="") -
+					
+					-for(var i = 1; i <= 8; i++)
+						if(i == hour)
+							option(value=i selected="selected")=i
+						else
+							option(value=i)=i
+			
+			br
+			input(id="update-filters-submit" class="input-button search-button" type="submit" value="Update")
+			
+			-resetButtonId = data.id + "-reset-button"
+			button(id=resetButtonId class="delete-button" onClick="resetClicked(this)") Reset Password
+
+if(view == 'admin')
+	h3=status
+
+	div(id="updates-div")
+		each val in students
+			+updateForm(val)
+
+
+	script.
+		$(document).ready(function() {
+		
+			$("#updates-table").tablesorter();
+			
+		}); //end document.ready
+		
+		//called when a reset button is clicked
+		function resetClicked(button) {
+			var splitString = button.id.split("-");
+			var clickedId = splitString[0];
+			
+			var confirm = window.confirm("Are you sure you want to reset this password?");
+			
+			if(confirm == true) {
+				$.ajax({
+					url: "/ResetPassword/" + clickedId,
+					type: "POST",
+					dataType: "html",
+					
+					success: function(data) {
+						$("#updates-content").html(data);
+						$("#updates-table").trigger("update");
+						var sorting = [4,1];
+						$("#updates-table").trigger("sorton", [sorting]);
+					}
+				
+				});
+			}
+				
+			return false;
+		}
+
+else
+	h1 Access Denied

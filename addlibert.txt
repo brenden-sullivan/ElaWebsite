@@ -1,1 +1,0 @@
-insert into People(id, username, password, first_name, last_name, hour, teacher, email, permission) values(null, <username>, eb0a191797624dd3a48fa681d3061212, Steve, Libert, 1, 1, '', 'admin')

@@ -1,0 +1,17 @@
+extends ./template.jade
+
+block page-content
+	h1(class="page-title") Update Student Info
+	
+	div(id="update-filters-div")
+		include ./update-filters.jade
+		
+	div(id="updates-content")
+		include ./studentinfo.jade
+		
+block scripts
+	script.
+		$(document).ready(function() {
+			$("#updatestudents-link").addClass("active");
+		
+		});
