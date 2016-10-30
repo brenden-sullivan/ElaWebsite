@@ -229,7 +229,7 @@ app.post('/login', function(req, res, next) {
 //note - using post here only to prevent "?" at end of url which is default on get from form submit
 app.post('/signup-form', function(req, res, next) {
 	db.all("select id, last_name from People where permission = 'admin' and id != 1;", function(err, rows) {
-		console.log(rows);
+		//console.log(rows);
 		
 		try {
 			var data = {
@@ -860,7 +860,7 @@ app.post('/documents-upload', function(req, res, next) {
 	var cookies = cookie.parse(req.headers.cookie || '');
 	
 	var formData = req.body;
-	console.log(formData);
+	//console.log(formData);
 	//var file = req.file;
 	//var link = "/uploads/" + cookies.id + "/" + file.originalname;
 	var link = formData['url'];
@@ -2357,15 +2357,6 @@ app.post('/database/clear-students', function(req, res, next) {
 
 });
 
-/**************************************************/
-//start server
-var server_port = process.env.OPENSHIFT_NODEJS_PORT || 8080;
-var server_ip_address = process.env.OPENSHIFT_NODEJS_IP || '127.0.0.1';
-
-http.listen(server_port, server_ip_address, function(){
-  console.log("Listening on " + server_ip_address + ", server_port " + server_port);
-});
-
 
 /**************************************************/
 //Helper methods
@@ -2493,4 +2484,15 @@ function titleCase(str) {
 function logErrors(err) {
 	//console.log(err);
 }
+
+
+
+/**************************************************/
+//start server
+var server_port = process.env.OPENSHIFT_NODEJS_PORT || 8080;
+var server_ip_address = process.env.OPENSHIFT_NODEJS_IP || '127.0.0.1';
+
+http.listen(server_port, server_ip_address, function(){
+  console.log("Listening on " + server_ip_address + ", server_port " + server_port);
+});
 
